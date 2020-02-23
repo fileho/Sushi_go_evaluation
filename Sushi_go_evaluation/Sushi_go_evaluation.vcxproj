@@ -148,7 +148,7 @@
     <ClCompile Include="main.cpp" />
     <ClCompile Include="player.cpp" />
     <ClCompile Include="simulated_annealing.cpp" />
-    <ClCompile Include="simulation.cpp" />
+    <ClCompile Include="game.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="card.h" />
@@ -156,7 +156,7 @@
     <ClInclude Include="genetic_algorithm.h" />
     <ClInclude Include="player.h" />
     <ClInclude Include="simulated_annealing.h" />
-    <ClInclude Include="simulation.h" />
+    <ClInclude Include="game.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

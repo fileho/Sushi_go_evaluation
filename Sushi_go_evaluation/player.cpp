@@ -1,6 +1,7 @@
 #include "player.h"
 
 #include <numeric>
+#include <random>
 
 
 void player::play_cards()
@@ -33,4 +34,16 @@ void player::update_card()
 	}
 	
 	hand.erase(hand.begin() + static_cast<std::vector<card_t>::difference_type>(selected[0]));
+}
+
+void player::play()
+{
+	selected.clear();
+
+	std::random_device rd;
+	std::mt19937 gen(rd());
+
+	std::uniform_int_distribution<> dist(0, hand.size() - 1);
+
+	selected.push_back(dist(gen));
 }

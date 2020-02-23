@@ -1,5 +1,6 @@
 #pragma once
 
+#include <string>
 
 enum class card_type { tempura, chopsticks, maki_roll_1, maki_roll_2, maki_roll_3, wasabi, sashimi, pudding, nigiri_1, nigiri_2, nigiri_3, dumplings };
 
@@ -21,6 +22,8 @@ public:
     int wasabi_nigiri_1{};
     int wasabi_nigiri_2{};
     int wasabi_nigiri_3{};
+
+    std::string print() const;
 };
 
 class base_card

@@ -1,5 +1,42 @@
 #include "card.h"
 
+std::string card_list::print() const
+{
+    std::string ret{};
+    if (tempura)
+        ret += "tempura: " + std::to_string(tempura) + "\n";
+    if (maki_roll_1)
+        ret += "maki roll 1: " + std::to_string(maki_roll_1) + "\n";
+    if (maki_roll_2)
+        ret += "maki roll 2: " + std::to_string(maki_roll_2) + "\n";
+    if (maki_roll_3)
+        ret += "maki roll 3: " + std::to_string(maki_roll_3) + "\n";
+    if (sashimi)
+        ret += "sashimi: " + std::to_string(sashimi) + "\n";
+    if (chopsticks)
+        ret += "chopsticks: " + std::to_string(chopsticks) + "\n";
+    if (pudding)
+        ret += "pudding: " + std::to_string(pudding) + "\n";
+    if (nigiri_1)
+        ret += "nigiri 1: " + std::to_string(nigiri_1) + "\n";
+    if (nigiri_2)
+        ret += "nigiri 2: " + std::to_string(nigiri_2) + "\n";
+    if (nigiri_3)
+        ret += "nigiri 3: " + std::to_string(nigiri_3) + "\n";
+    if (wasabi)
+        ret += "wasabi: " + std::to_string(wasabi) + "\n";
+    if (dumplings)
+        ret += "dumplings: " + std::to_string(dumplings) + "\n";
+    if (wasabi_nigiri_1)
+        ret += "wasabi & nigiri 1: " + std::to_string(wasabi_nigiri_1) + "\n";
+    if (wasabi_nigiri_2)
+        ret += "wasabi & nigiri 2: " + std::to_string(wasabi_nigiri_2) + "\n";
+    if (wasabi_nigiri_3)
+        ret += "wasabi & nigiri 3: " + std::to_string(wasabi_nigiri_3) + "\n";
+
+    return ret;
+}
+
 
 void tempura::play(card_list& cards)
 {
@@ -142,7 +179,6 @@ card_type nigiri_3::get_card() const
 
 void dumplings::play(card_list& cards)
 {
-
     ++cards.dumplings;
 }
 
