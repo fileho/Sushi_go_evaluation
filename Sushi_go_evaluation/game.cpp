@@ -128,3 +128,25 @@ void game::puddings()
 			x.round_points.push_back(0);
 	}
 }
+
+int evaluate(player_weight_t state)
+{
+	int ret = 0;
+
+	std::vector<player> players{};
+	players.emplace_back(player{ state });
+
+	player_weight_t fill{};
+	for (int i{}; i < 4; ++i)
+		players.emplace_back(player{ fill });
+
+	for (int i{}; i < 100; ++i)
+	{
+		auto copy = players;
+		game game{ std::move(players) };
+		auto results = game.play_game();
+		ret += results[0];
+	}
+
+	return ret;
+}

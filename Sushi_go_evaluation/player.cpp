@@ -36,6 +36,13 @@ void player::update_card()
 	hand.erase(hand.begin() + static_cast<std::vector<card_t>::difference_type>(selected[0]));
 }
 
+
+
+player::player(const player& p)
+{
+	player_weights = p.player_weights;
+}
+
 void player::play()
 {
 	selected.clear();

@@ -6,13 +6,14 @@
 #include <memory>
 
 
-typedef std::vector<unsigned int> player_weight_t;
+typedef std::vector<int> player_weight_t;
 typedef std::unique_ptr<base_card> card_t;
 
 class player
 {
 public:
 	player(const player_weight_t& weights) : player_weights{ weights } { ; }
+	player(const player& p);
 	void play();
 	void play_cards();
 	int points() const;
