@@ -6,6 +6,7 @@
 
 #include <vector>
 
+const int number_of_rules{ 20 };
 
 class game
 {
