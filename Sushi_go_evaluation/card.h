@@ -31,6 +31,7 @@ class base_card
 public:
     virtual ~base_card() = default;
     virtual void play(card_list& cards) = 0;
+    virtual unsigned MCTS() const = 0;
     virtual card_type get_card() const = 0;
 };
 
@@ -38,6 +39,7 @@ class tempura : public base_card
 {
 public:
     void play(card_list& cards) override;
+    unsigned MCTS() const override;
     card_type get_card() const override;
 };
 
@@ -45,6 +47,7 @@ class chopsticks : public base_card
 {
 public:
     void play(card_list& cards) override;
+    unsigned MCTS() const override;
     card_type get_card() const override;
 };
 
@@ -52,6 +55,7 @@ class maki_roll_1 : public base_card
 {
 public:
     void play(card_list& cards) override;
+    unsigned MCTS() const override;
     card_type get_card() const override;
 };
 
@@ -59,6 +63,7 @@ class maki_roll_2 : public base_card
 {
 public:
     void play(card_list& cards) override;
+    unsigned MCTS() const override;
     card_type get_card() const override;
 };
 
@@ -66,6 +71,7 @@ class maki_roll_3 : public base_card
 {
 public:
     void play(card_list& cards) override;
+    unsigned MCTS() const override;
     card_type get_card() const override;
 };
 
@@ -73,6 +79,7 @@ class wasabi : public base_card
 {
 public:
     void play(card_list& cards) override;
+    unsigned MCTS() const override;
     card_type get_card() const override;
 };
 
@@ -80,6 +87,7 @@ class sashimi : public base_card
 {
 public:
     void play(card_list& cards) override;
+    unsigned MCTS() const override;
     card_type get_card() const override;
 };
 
@@ -87,6 +95,7 @@ class pudding : public base_card
 {
 public:
     void play(card_list& cards) override;
+    unsigned MCTS() const override;
     card_type get_card() const override;
 };
 
@@ -94,6 +103,7 @@ class nigiri_1 : public base_card
 {
 public:
     void play(card_list& cards) override;
+    unsigned MCTS() const override;
     card_type get_card() const override;
 };
 
@@ -101,6 +111,7 @@ class nigiri_2 : public base_card
 {
 public:
     void play(card_list& cards) override;
+    unsigned MCTS() const override;
     card_type get_card() const override;
 };
 
@@ -108,6 +119,7 @@ class nigiri_3 : public base_card
 {
 public:
     void play(card_list& cards) override;
+    unsigned MCTS() const override;
     card_type get_card() const override;
 };
 
@@ -115,6 +127,7 @@ class dumplings : public base_card
 {
 public:
     void play(card_list& cards) override;
+    unsigned MCTS() const override;
     card_type get_card() const override;
 };
 

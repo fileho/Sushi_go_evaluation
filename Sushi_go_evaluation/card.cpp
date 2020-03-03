@@ -48,6 +48,11 @@ card_type tempura::get_card() const
     return card_type::tempura;
 }
 
+unsigned tempura::MCTS() const
+{
+    return 7;
+}
+
 
 void chopsticks::play(card_list& cards)
 {
@@ -59,10 +64,20 @@ card_type chopsticks::get_card() const
     return card_type::chopsticks;
 }
 
+unsigned chopsticks::MCTS() const
+{
+    return 11;
+}
+
 
 void maki_roll_1::play(card_list& cards)
 {
     ++cards.maki_roll_1;
+}
+
+unsigned maki_roll_1::MCTS() const
+{
+    return 5;
 }
 
 card_type maki_roll_1::get_card() const
@@ -76,6 +91,11 @@ void maki_roll_2::play(card_list& cards)
     ++cards.maki_roll_2;
 }
 
+unsigned maki_roll_2::MCTS() const
+{
+    return 4;
+}
+
 card_type maki_roll_2::get_card() const
 {
     return card_type::maki_roll_2;
@@ -85,6 +105,11 @@ card_type maki_roll_2::get_card() const
 void maki_roll_3::play(card_list& cards)
 {
     ++cards.maki_roll_3;
+}
+
+unsigned maki_roll_3::MCTS() const
+{
+    return 3;
 }
 
 card_type maki_roll_3::get_card() const
@@ -98,6 +123,11 @@ void wasabi::play(card_list& cards)
     ++cards.wasabi;
 }
 
+unsigned wasabi::MCTS() const
+{
+    return 6;
+}
+
 card_type wasabi::get_card() const
 {
     return card_type::wasabi;
@@ -109,6 +139,11 @@ void sashimi::play(card_list& cards)
     ++cards.sashimi;
 }
 
+unsigned sashimi::MCTS() const
+{
+    return 8;
+}
+
 card_type sashimi::get_card() const
 {
     return card_type::sashimi;
@@ -118,6 +153,11 @@ card_type sashimi::get_card() const
 void pudding::play(card_list& cards)
 {
     ++cards.pudding;
+}
+
+unsigned pudding::MCTS() const
+{
+    return 10;
 }
 
 card_type pudding::get_card() const
@@ -137,6 +177,11 @@ void nigiri_1::play(card_list& cards)
     ++cards.nigiri_1;
 }
 
+unsigned nigiri_1::MCTS() const
+{
+    return 2;
+}
+
 card_type nigiri_1::get_card() const
 {
     return card_type::nigiri_1;
@@ -152,6 +197,11 @@ void nigiri_2::play(card_list& cards)
         return;
     }
     ++cards.nigiri_2;
+}
+
+unsigned nigiri_2::MCTS() const
+{
+    return 1;
 }
 
 card_type nigiri_2::get_card() const
@@ -171,6 +221,11 @@ void nigiri_3::play(card_list& cards)
     ++cards.nigiri_3;
 }
 
+unsigned nigiri_3::MCTS() const
+{
+    return 0;
+}
+
 card_type nigiri_3::get_card() const
 {
     return card_type::nigiri_3;
@@ -180,6 +235,11 @@ card_type nigiri_3::get_card() const
 void dumplings::play(card_list& cards)
 {
     ++cards.dumplings;
+}
+
+unsigned dumplings::MCTS() const
+{
+    return 9;
 }
 
 card_type dumplings::get_card() const

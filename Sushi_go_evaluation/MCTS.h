@@ -1,16 +1,25 @@
 #pragma once
 
+#include "player.h"
+
 #include <vector>
 #include <memory>
 #include <random>
+#include <algorithm>
+
+
+// Implementation of determined MCTS using DUCT heuristic
+// Determined: creates multiple consistent card deals to approximate game with partial information and covgerts it into game with perfect information
+// UCT: upper confidance bound for trees heuristic which selects nodes for expansion
+// DUCT: decoupled UCT: handes simultanious moves, each player has his own values of UCT for his actions, each player selects move individualy
 
 // tuning UCT parametr for DUCT
 const float UCT_const = 1;
 
-std::random_device MCTS_rd;
+// std::random_device MCTS_rd;
 
 
-typedef std::vector<int> card_list_t;
+typedef std::vector<unsigned int> card_list_t;
 typedef unsigned action_t;
 
 
@@ -53,12 +62,12 @@ public:
 	action_t selected_action{};
 
 	MCTS_player random_action();
-	MCTS_player preform_action();
+	MCTS_player preform_action() const;
+	action_list_t generate_actions() const;
 	
 
 	std::size_t UCT(double visit_count); // finds best action according to UCT
-private:
-	action_list_t generate_actions();
+	
 };	
 
 class MCTS_node;
@@ -73,22 +82,45 @@ public:
 	MCTS_node* parent;
 	double visit_count{};
 	std::vector<MCTS_player> players;
-	//table of nodes according to each simontanious move
+	//table of nodes according to each simultanious move
 	table_t transpositional_table;
 
-	std::vector<MCTS_player> swap_hands(std::vector<MCTS_player> new_players);
-	std::vector<MCTS_player> tree_node();
+	bool is_terminal() const;
+	std::vector<double> evaluate() const;
+	std::vector<MCTS_player> swap_hands(std::vector<MCTS_player>& new_players) const;
+	std::vector<MCTS_player> tree_node() const;
 	MCTS_node new_node();
-	std::size_t table_index();
+	std::size_t table_index() const;
+private:
+	std::vector<int> maki(std::vector<std::pair<std::size_t, int>>&& maki_rolls) const;
 };
+
+typedef std::size_t MCTS_card_t;
+
+class MCTS_deck
+{
+public:
+	void create_deck(const std::vector<MCTS_card_t>& played);
+	MCTS_card_t draw();
+	void shuffle();
+private:
+	std::vector<MCTS_card_t> deck{};
+};
+
 
 class MCTS
 {
 public:
-	std::unique_ptr<MCTS_node> generete_root();
+
+	void generete_root();
 	std::unique_ptr<MCTS_node> root = nullptr;
-	void simulate();
+	void find_best_move();
+	void init_players(const std::vector<card_t>& player);
+	void determize();
 private:
-	card_list_t played{};
+	void simulate_game();
+	MCTS_deck deck{};
+	std::size_t round_index{ 1 };
+	card_list_t played_list{};
 	std::vector<MCTS_player> players{};
 };

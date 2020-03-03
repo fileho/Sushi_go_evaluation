@@ -2,6 +2,7 @@
 #include "player.h"
 #include "genetic_algorithm.h"
 #include "simulated_annealing.h"
+#include "MCTS.h"
 
 #include <iostream>
 #include <chrono>
@@ -10,7 +11,7 @@
 
 int main()
 {
-	player_weight_t weights{};
+	/*player_weight_t weights{};
 	std::vector<player> players{};
 	for (std::size_t i{}; i < 5; ++i)
 		players.emplace_back(player(weights));
@@ -24,6 +25,23 @@ int main()
 
 	for (auto&& x : results)
 		std::cout << x << "\n";
+		*/
+
+	player_weight_t w{};
+
+	deck deck{};
+	player pl{ w };
+
+	for (int i{}; i < 7; ++i)
+		pl.hand.emplace_back(deck.draw());
+
+	MCTS mcts{};
+
+	mcts.init_players(pl.hand);
+	mcts.determize();
+	mcts.generete_root();
+	mcts.find_best_move();
+	
 
 	return 0;
 }
