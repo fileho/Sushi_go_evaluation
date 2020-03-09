@@ -361,24 +361,40 @@ void MCTS::generete_root(const std::vector<MCTS_player>& player)
 	root.reset(new MCTS_node{ nullptr, player });
 }
 
-void MCTS::find_best_move()
+std::pair<action_t, action_t> MCTS::find_best_move()
 {
-	for (std::size_t i{}; i < 10000; ++i)
+	for (std::size_t i{}; i < 5000; ++i)
 		simulate_game();
 
 	
-	for (auto&& p : root.get()->players)
+/*	for (auto&& p : root.get()->players)
 	{
 		for (auto&& a : p.actions)
 			std::cout << a.action << ": " << a.visit_count << "  reward: " << a.reward << "\n";
 		std::cout << "\n\n";
+	}*/
+
+	double best = 0;
+	std::pair<action_t, action_t> action;
+	for (auto&& a : root.get()->players[0].actions)
+	{
+		if (a.reward >= best)
+		{
+			best = a.reward;
+			action = std::make_pair(a.action, a.action2);
+		}
 	}
+//	std::cout << "action:" << action.first << " " << action.second << "\n\n";
+
+	return action;
 }
 
 void MCTS::init_players(const std::vector<card_t>& player)
 {
 	card_list_t hand(12, 0);
 	card_list_t played(15, 0);
+
+	round_index = 1;
 
 	for (auto&& x : player)
 		++hand[x->MCTS()];
@@ -392,10 +408,38 @@ void MCTS::init_players(const std::vector<card_t>& player)
 		players.emplace_back(MCTS_player{ hand, played });
 }
 
+void MCTS::new_set(const std::vector<card_t>& player)
+{
+	card_list_t hand(12, 0);
+	card_list_t played(15, 0);
+
+	round_index = 1;
+
+	for (auto&& x : player)
+		++hand[x->MCTS()];
+
+	players[0].hand = hand;
+	players[0].played = played;
+
+	deck.create_deck(hand);
+
+	hand = card_list_t(12, 0);
+	for (size_t i{ 1 }; i < players.size(); i++)
+	{
+		players[i].hand = hand;
+		players[i].played = played;
+	}
+}
+
 void MCTS::determize()
 {
 	if (round_index >= players.size())
+	{
+		for (auto&& p : players)
+			p.actions = p.generate_actions();
+		generete_root(players);
 		return;
+	}
 
 	deck.shuffle();
 
@@ -412,28 +456,39 @@ void MCTS::determize()
 	for (auto&& p : pl)
 		p.actions = p.generate_actions();
 
-	for (auto&& p : pl)
+/*	for (auto&& p : pl)
 	{
 		for (auto&& a : p.hand)
 			std::cout << a << " ";
 		std::cout << "\n";
-	}
+	}*/
 
 	generete_root(pl);
 }
 
-void MCTS::update(const std::vector<base_player>& player, std::size_t index)
+void MCTS::update(const std::vector<player_t>& player, std::size_t index)
 {
+	++round_index;
+
 	for (size_t i = 0; i < players.size(); i++)
 	{
-		players[i].played = from_card_list(player[(i + index) % players.size()].played_list);
+		players[i].played = from_card_list(player[(i + index) % players.size()]->played_list);
 		players[i].hand = card_list_t(12, 0);
 	}
 
-	for (size_t i = 0; i < std::min(players.size(), round_index); i++)
+	for (size_t i = 0; i < std::min(players.size(), round_index); ++i)
 	{
-		for (auto&& c : player[(i + index) % players.size()].hand)
+		for (auto&& c : player[(i + index) % players.size()]->hand)
 			++players[i].hand[c->MCTS()];
+	}
+}
+
+void MCTS::add_points(const std::vector<player_t>& player, std::size_t index)
+{
+	for (size_t i = 0; i < players.size(); i++)
+	{
+		players[i].points = player[(i + index) % player.size()]->points();
+		players[i].puddings = player[(i + index) % player.size()]->puddings;
 	}
 }
 

@@ -2,6 +2,7 @@
 
 #include <numeric>
 #include <random>
+#include <iostream>
 
 
 void base_player::play_cards()
@@ -59,4 +60,56 @@ void random_player::play()
 	std::uniform_int<unsigned> dist(0, hand.size() - 1);
 
 	selected.push_back(dist(gen));
+}
+
+MC_player::MC_player() : mcts{ std::make_unique<MCTS>() } { ; }
+
+
+void MC_player::play()
+{
+	selected.clear();
+
+	mcts->determize();
+
+	auto res = mcts->find_best_move();
+
+	unsigned used{ 100 };
+
+	for (size_t i = 0; i < hand.size(); ++i)
+	{
+		if (hand[i]->MCTS() == res.second)
+		{
+			used = i;
+			
+			selected.push_back(i);
+			break;
+		}
+	}
+	for (size_t i = 0; i < hand.size(); ++i)
+	{
+		if (hand[i]->MCTS() == res.first && i != used)
+		{
+			selected.push_back(i);
+			break;
+		}
+	}
+}
+
+void MC_player::update(const std::vector<player_t>& player, std::size_t index)
+{
+	mcts->update(player, index);
+}
+
+void MC_player::start_set()
+{
+	++set_index;
+	if(set_index == 1)
+		mcts->init_players(hand);
+	else
+		mcts->new_set(hand);
+}
+
+void MC_player::add_points(const std::vector<player_t>& player, std::size_t index)
+{
+	mcts->add_points(player, index);
 }

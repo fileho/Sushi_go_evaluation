@@ -11,6 +11,9 @@ std::vector<int> game::play_game()
 	{
 		deal_cards();
 
+		for (auto&& p : players)
+			p->start_set();
+
 		while (players[0]->hand.size())
 		{
 			for (auto&& p : players)
@@ -26,6 +29,10 @@ std::vector<int> game::play_game()
 		add_points();
 		for (auto&& p : players)
 			p->played_list = card_list{};
+
+		for (size_t i = 0; i < players.size(); ++i)
+			players[i]->add_points(players, i);
+		
 	}
 
 	puddings();

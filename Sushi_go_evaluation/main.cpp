@@ -4,6 +4,7 @@
 #include "simulated_annealing.h"
 #include "MCTS.h"
 
+
 #include <iostream>
 #include <chrono>
 #include <thread>
@@ -13,9 +14,10 @@ int main()
 {
 	std::vector<player_t> players{};
 
+
 	for (size_t i = 0; i < 5; i++)
 	{
-		players.emplace_back(std::make_unique<random_player>());
+		players.emplace_back(std::make_unique<MC_player>());
 	}
 	game game{ std::move(players) };
 	auto res = game.play_game();

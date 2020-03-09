@@ -7,6 +7,9 @@
 #include <random>
 #include <algorithm>
 
+class base_player;
+typedef std::unique_ptr<base_card> card_t;
+typedef std::unique_ptr<base_player> player_t;
 
 // Implementation of determined MCTS using DUCT heuristic
 // Determined: creates multiple consistent card deals to approximate game with partial information and covgerts it into game with perfect information
@@ -120,13 +123,14 @@ private:
 class MCTS
 {
 public:
-
 	void generete_root(const std::vector<MCTS_player>& player);
 	std::unique_ptr<MCTS_node> root = nullptr;
-	void find_best_move();
+	std::pair<action_t, action_t> find_best_move();
 	void init_players(const std::vector<card_t>& player);
+	void new_set(const std::vector<card_t>& player);
 	void determize();
-	void update(const std::vector<base_player>& player, std::size_t index);
+	void update(const std::vector<player_t>& player, std::size_t index);
+	void add_points(const std::vector<player_t>& player, std::size_t index);
 private:
 	void simulate_game();
 	void swap_hands();
