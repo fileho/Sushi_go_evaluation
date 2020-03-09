@@ -11,7 +11,8 @@ void simulated_annealing::simulate()
 	{
 		auto T = schedule(t);
 		auto next = neighbour();
-		int next_value = evaluate(next);
+	//	int next_value = evaluate(next);
+		int next_value = 0;
 
 		int E = next_value - value;
 

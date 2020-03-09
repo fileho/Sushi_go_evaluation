@@ -37,12 +37,15 @@ const std::size_t Wasabi_Nig3 = 12;
 const std::size_t Wasabi_Nig2 = 13;
 const std::size_t Wasabi_Nig1 = 14;
 
+const std::size_t No_move = 100;
+
 
 class MCTS_action_data
 {
 public:
-	MCTS_action_data(unsigned action_index) : action{ action_index } { ; }
+	MCTS_action_data(action_t action_index, action_t action2 = No_move) : action{ action_index }, action2{ action2 } {; }
 	action_t action;
+	action_t action2;
 	double reward = 0;
 	double visit_count = 0;
 };
@@ -62,11 +65,16 @@ public:
 	action_t selected_action{};
 
 	MCTS_player random_action();
-	MCTS_player preform_action() const;
+	MCTS_player perform_action() const;
 	action_list_t generate_actions() const;
 	
 
 	std::size_t UCT(double visit_count); // finds best action according to UCT
+
+private:
+	void generate_pairs(action_list_t& action_list) const;
+	void smart_generete(action_list_t& action_list, unsigned i) const;
+	void perform(card_list_t& new_hand, card_list_t& new_played, action_t action) const;
 	
 };	
 
@@ -93,6 +101,7 @@ public:
 	std::size_t table_index() const;
 private:
 	std::vector<int> maki(std::vector<std::pair<std::size_t, int>>&& maki_rolls) const;
+	std::vector<int> pudding(std::vector<int>& puddings) const;
 };
 
 typedef std::size_t MCTS_card_t;
@@ -112,15 +121,20 @@ class MCTS
 {
 public:
 
-	void generete_root();
+	void generete_root(const std::vector<MCTS_player>& player);
 	std::unique_ptr<MCTS_node> root = nullptr;
 	void find_best_move();
 	void init_players(const std::vector<card_t>& player);
 	void determize();
+	void update(const std::vector<base_player>& player, std::size_t index);
 private:
 	void simulate_game();
+	void swap_hands();
+	card_list_t from_card_list(const card_list& cl);
+
 	MCTS_deck deck{};
 	std::size_t round_index{ 1 };
-	card_list_t played_list{};
+	card_list_t played_list = card_list_t(12,0);
 	std::vector<MCTS_player> players{};
+
 };

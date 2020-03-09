@@ -5,9 +5,9 @@
 class individual
 {
 public:
-	explicit individual(player_weight_t weights) : state{ weights } { value = evaluate(weights); }
+	explicit individual(player_weight_t weights) : state{ weights } { /*value = evaluate(weights); */ };
 	player_weight_t state;
-	int value;
+	int value = 0;
 };
 
 const int population_size = 64;

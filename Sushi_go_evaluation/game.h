@@ -11,10 +11,10 @@ const int number_of_rules{ 20 };
 class game
 {
 public:
-	game(std::vector<player>&& player) : players{ std::move(player) } {};
+	game(std::vector<std::unique_ptr<base_player>>&& player) : players{ std::move(player) } {};
 	std::vector<int> play_game();
 private:
-	std::vector<player> players;
+	std::vector<std::unique_ptr<base_player>> players;
 	deck deck_{};
 	unsigned int player_index{};
 

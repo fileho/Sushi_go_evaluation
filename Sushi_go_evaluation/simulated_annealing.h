@@ -9,7 +9,7 @@ const std::size_t maxT{ static_cast<std::size_t>(std::pow(10,6)) };
 class simulated_annealing
 {
 public:
-	explicit simulated_annealing(const player_weight_t& inicial_state) : state{ inicial_state } { value = evaluate(inicial_state); }
+	explicit simulated_annealing(const player_weight_t& inicial_state) : state{ inicial_state } { /*value = evaluate(inicial_state);*/; }
 	void simulate();
 
 private:

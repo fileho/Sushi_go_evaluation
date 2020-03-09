@@ -4,7 +4,7 @@
 #include <random>
 
 
-void player::play_cards()
+void base_player::play_cards()
 {
 	for (auto&& x : selected)
 		hand[x]->play(played_list);
@@ -12,13 +12,13 @@ void player::play_cards()
 	update_card();
 }
 
-int player::points() const
+int base_player::points() const
 {
 	return std::accumulate(round_points.cbegin(), round_points.cend(), 0);
 }
 
 
-void player::update_card()
+void base_player::update_card()
 {
 	if (selected.size() == 2)
 	{
@@ -37,13 +37,7 @@ void player::update_card()
 }
 
 
-
-player::player(const player& p)
-{
-	player_weights = p.player_weights;
-}
-
-void player::play()
+void base_player::play()
 {
 	selected.clear();
 
@@ -51,6 +45,18 @@ void player::play()
 	std::mt19937 gen(rd());
 
 	std::uniform_int_distribution<> dist(0, hand.size() - 1);
+
+	selected.push_back(dist(gen));
+}
+
+
+void random_player::play()
+{
+	selected.clear();
+
+	std::random_device rd;
+	std::mt19937 gen{ rd() };
+	std::uniform_int<unsigned> dist(0, hand.size() - 1);
 
 	selected.push_back(dist(gen));
 }
