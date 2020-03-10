@@ -3,6 +3,8 @@
 #include <cmath>
 #include <iostream>
 #include <numeric>
+#include <thread>
+#include <utility>
 
 MCTS_player MCTS_player::random_action()
 {
@@ -236,9 +238,9 @@ std::vector<double> MCTS_node::evaluate() const
 //	for (std::size_t i{}; i < points.size(); ++i)
 //		rewards[points[i].first] = 1 - i / (points.size() - 1.0);
 
-	rewards[points[0].first] = std::min(0.5 + (static_cast<double>(points[0].second) - points[1].second) / 10, 1.0);
+	rewards[points[0].first] = std::min(0.5 + (std::sqrt(static_cast<double>(points[0].second) - points[1].second)) / 10, 1.0);
 	for(std::size_t i{1}; i < points.size(); ++i)
-		rewards[points[i].first] = std::max(0.5 - (static_cast<double>(points[0].second) - points[i].second) / 10, 0.0);
+		rewards[points[i].first] = std::max(0.5 - (std::sqrt(static_cast<double>(points[0].second) - points[i].second)) / 10, 0.0);
 
 
 	return rewards;
@@ -356,35 +358,63 @@ std::vector<int> MCTS_node::pudding(std::vector<int>& puddings) const
 }
 
 
-void MCTS::generete_root(const std::vector<MCTS_player>& player)
+void MCTS::generete_root(const std::vector<MCTS_player>& player, std::size_t index)
 {
-	root.reset(new MCTS_node{ nullptr, player });
+	roots[index].reset(new MCTS_node{ nullptr, player });
 }
 
 std::pair<action_t, action_t> MCTS::find_best_move()
 {
-	for (std::size_t i{}; i < 5000; ++i)
-		simulate_game();
-
-	
-/*	for (auto&& p : root.get()->players)
+	if (round_index >= players.size())
 	{
-		for (auto&& a : p.actions)
-			std::cout << a.action << ": " << a.visit_count << "  reward: " << a.reward << "\n";
-		std::cout << "\n\n";
-	}*/
+		for (std::size_t i{}; i < number_of_simulation; ++i)
+			simulate_game(0);
+
+
+		double best = 0;
+		std::pair<action_t, action_t> action;
+		for (auto&& a : roots[0].get()->players[0].actions)
+		{
+			if (a.reward >= best)
+			{
+				best = a.reward;
+				action = std::make_pair(a.action, a.action2);
+			}
+		}
+
+		return action;
+	}
+
+
+	std::vector<std::thread> threadPool{};
+
+	for (std::size_t i{}; i < roots.size(); ++i)
+	{
+		std::thread t(&MCTS::simulate_n_games, this, i);
+		threadPool.emplace_back(std::move(t));
+	}
+	for (size_t i = 0; i < threadPool.size(); i++)
+		threadPool[i].join();
+
+	std::vector<double> rewards(roots[0]->players[0].actions.size(), 0);
+
+	for (auto&& r : roots)
+	{
+		for (size_t i = 0; i < r->players[0].actions.size(); ++i)
+			rewards[i] += r->players[0].actions[i].reward;
+	}
 
 	double best = 0;
 	std::pair<action_t, action_t> action;
-	for (auto&& a : root.get()->players[0].actions)
+	auto& ac = roots[0]->players[0].actions;
+	for (size_t i = 0; i < rewards.size(); ++i)
 	{
-		if (a.reward >= best)
+		if (rewards[i] >= best)
 		{
-			best = a.reward;
-			action = std::make_pair(a.action, a.action2);
+			best = rewards[i];
+			action = std::make_pair(ac[i].action, ac[i].action2);
 		}
 	}
-//	std::cout << "action:" << action.first << " " << action.second << "\n\n";
 
 	return action;
 }
@@ -401,7 +431,6 @@ void MCTS::init_players(const std::vector<card_t>& player)
 
 	players.emplace_back(MCTS_player{ hand, played });
 
-	deck.create_deck(hand);
 
 	hand = card_list_t(12, 0);
 	for(std::size_t i{}; i < 11 - player.size(); ++i)
@@ -421,8 +450,6 @@ void MCTS::new_set(const std::vector<card_t>& player)
 	players[0].hand = hand;
 	players[0].played = played;
 
-	deck.create_deck(hand);
-
 	hand = card_list_t(12, 0);
 	for (size_t i{ 1 }; i < players.size(); i++)
 	{
@@ -437,33 +464,30 @@ void MCTS::determize()
 	{
 		for (auto&& p : players)
 			p.actions = p.generate_actions();
-		generete_root(players);
+		generete_root(players, 0);
 		return;
 	}
 
-	deck.shuffle();
+	deck.create_deck(get_played());
 
-	std::vector<MCTS_player> pl = players;
-
-	for (std::size_t i{ round_index }; i < players.size(); ++i)
+	for (std::size_t index{}; index < roots.size(); ++index)
 	{
-		for (std::size_t j{}; j < 13 - round_index - players.size(); ++j)
-			++pl[i].hand[deck.draw()];
-		pl[i].actions = pl[i].generate_actions();
+		deck.shuffle();
+
+		std::vector<MCTS_player> pl = players;
+
+		for (std::size_t i{ round_index }; i < players.size(); ++i)
+		{
+			for (std::size_t j{}; j < 13 - round_index - players.size(); ++j)
+				++pl[i].hand[deck.draw()];
+			pl[i].actions = pl[i].generate_actions();
+		}
+
+		for (auto&& p : pl)
+			p.actions = p.generate_actions();
+
+		generete_root(pl, index);
 	}
-
-
-	for (auto&& p : pl)
-		p.actions = p.generate_actions();
-
-/*	for (auto&& p : pl)
-	{
-		for (auto&& a : p.hand)
-			std::cout << a << " ";
-		std::cout << "\n";
-	}*/
-
-	generete_root(pl);
 }
 
 void MCTS::update(const std::vector<player_t>& player, std::size_t index)
@@ -481,6 +505,9 @@ void MCTS::update(const std::vector<player_t>& player, std::size_t index)
 		for (auto&& c : player[(i + index) % players.size()]->hand)
 			++players[i].hand[c->MCTS()];
 	}
+
+	if (round_index == 12 - players.size())
+		save_played();
 }
 
 void MCTS::add_points(const std::vector<player_t>& player, std::size_t index)
@@ -493,9 +520,9 @@ void MCTS::add_points(const std::vector<player_t>& player, std::size_t index)
 }
 
 // main function which silumates single game
-void MCTS::simulate_game()
+void MCTS::simulate_game(std::size_t index)
 {
-	MCTS_node* current = root.get();
+	MCTS_node* current = roots[index].get();
 
 	// UCT
 	while (!current->is_terminal())
@@ -546,9 +573,10 @@ void MCTS::simulate_game()
 	}
 }
 
-void MCTS::swap_hands()
+void MCTS::simulate_n_games(std::size_t index)
 {
-
+	for (size_t i = 0; i < number_of_simulation; ++i)
+		simulate_game(index);
 }
 
 card_list_t MCTS::from_card_list(const card_list& cl)
@@ -573,11 +601,55 @@ card_list_t MCTS::from_card_list(const card_list& cl)
 	return played;
 }
 
-void MCTS_deck::create_deck(const std::vector<MCTS_card_t>& played)
+card_list_t MCTS::get_played() const
+{
+	auto ret = played_list;
+
+	for (auto&& p : players)
+	{
+		for (std::size_t i{}; i < p.played.size(); ++i)
+		{
+			if (i >= 12)
+			{
+				ret[6] += p.played[i];
+				ret[i - 12] += p.played[i];
+			}
+			else
+				ret[i] += p.played[i];
+		}
+	}
+
+	for (size_t i = 0; i < std::min(players.size(), round_index); ++i)
+	{
+		for (size_t j{}; j < players[i].hand.size(); ++j)
+			ret[j] += players[i].hand[j];
+	}
+
+	return ret;
+}
+
+void MCTS::save_played()
+{
+	for (auto&& p : players)
+	{
+		for (std::size_t i{}; i < p.played.size(); ++i)
+		{
+			if (i >= 12)
+			{
+				played_list[6] += p.played[i];
+				played_list[i - 12] += p.played[i];
+			}
+			else
+				played_list[i] += p.played[i];
+		}
+	}
+}
+
+void MCTS_deck::create_deck(const card_list_t& played)
 {
 	deck.clear();
 
-	std::vector<MCTS_card_t> counts{ 10,5,10,8,12,6,6,14,14,14,10,4 };
+	card_list_t counts{ 5,10,5,8,12,6,6,14,14,14,10,4 };
 	for (std::size_t i{}; i < counts.size(); ++i)
 		counts[i] -= played[i];
 
@@ -590,9 +662,8 @@ void MCTS_deck::create_deck(const std::vector<MCTS_card_t>& played)
 
 MCTS_card_t MCTS_deck::draw()
 {
-	auto ret = deck[deck.size() - 1];
-	deck.pop_back();
-	return ret;
+	++index;
+	return deck[index];
 }
 
 void MCTS_deck::shuffle()
@@ -600,4 +671,5 @@ void MCTS_deck::shuffle()
 	std::random_device rd;
 	std::mt19937 gen(rd());
 	std::shuffle(deck.begin(), deck.end(), gen);
+	index = 0;
 }

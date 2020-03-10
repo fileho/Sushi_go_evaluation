@@ -7,39 +7,29 @@
 
 #include <iostream>
 #include <chrono>
-#include <thread>
 
 
 int main()
 {
-	std::vector<player_t> players{};
-
-
-	for (size_t i = 0; i < 5; i++)
+	std::vector<int> rewards{ 0,0,0 };
+	for (size_t i = 0; i < 100; i++)
 	{
-		players.emplace_back(std::make_unique<MC_player>());
+		std::vector<player_t> players{};
+		players.emplace_back(std::make_unique<MC_player>(1000, 1));
+		players.emplace_back(std::make_unique<MC_player>(100, 1));
+		players.emplace_back(std::make_unique<MC_player>(1000, 20));
+		game game{ std::move(players) };
+		auto res = game.play_game();
+		rewards[0] += res[0];
+		rewards[1] += res[1];
+		rewards[2] += res[2];
+		if (!(i % 10))
+			std::cout << "Complete: " << i / 100.0 << "\n";
 	}
-	game game{ std::move(players) };
-	auto res = game.play_game();
-	
-	for (auto&& r : res)
-		std::cout << r << "\n";
 
-/* MCTS
-	player_weight_t w{};
+	for (auto&& x : rewards)
+		std::cout << x << "\n";
 
-	deck deck{};
-	base_player pl{ w };
-
-	for (int i{}; i < 10; ++i)
-		pl.hand.emplace_back(deck.draw());
-
-	MCTS mcts{};
-
-	mcts.init_players(pl.hand);
-	mcts.determize();
-	mcts.find_best_move();
-	*/
 
 	return 0;
 }

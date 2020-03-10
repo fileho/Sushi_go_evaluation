@@ -48,7 +48,7 @@ public:
 class MC_player : public base_player
 {
 public:
-	MC_player();
+	MC_player(std::size_t silumations = 100, std::size_t determinizations = 10);
 	void play() override;
 	void update(const std::vector<player_t>& player, std::size_t index) override;
 	void start_set() override;

@@ -112,19 +112,20 @@ typedef std::size_t MCTS_card_t;
 class MCTS_deck
 {
 public:
-	void create_deck(const std::vector<MCTS_card_t>& played);
+	void create_deck(const card_list_t& played);
 	MCTS_card_t draw();
 	void shuffle();
 private:
 	std::vector<MCTS_card_t> deck{};
+	std::size_t index{};
 };
 
 
 class MCTS
 {
 public:
-	void generete_root(const std::vector<MCTS_player>& player);
-	std::unique_ptr<MCTS_node> root = nullptr;
+	MCTS(std::size_t simulation_count = 100, std::size_t deterministic_count = 20) : number_of_simulation{ simulation_count }, roots{ deterministic_count }{};
+	void generete_root(const std::vector<MCTS_player>& player, std::size_t index);
 	std::pair<action_t, action_t> find_best_move();
 	void init_players(const std::vector<card_t>& player);
 	void new_set(const std::vector<card_t>& player);
@@ -132,13 +133,17 @@ public:
 	void update(const std::vector<player_t>& player, std::size_t index);
 	void add_points(const std::vector<player_t>& player, std::size_t index);
 private:
-	void simulate_game();
-	void swap_hands();
+	void simulate_game(std::size_t index);
+	void simulate_n_games(std::size_t index);
 	card_list_t from_card_list(const card_list& cl);
+	card_list_t get_played() const;
+	void save_played();
 
+	std::vector<std::unique_ptr<MCTS_node>> roots;
 	MCTS_deck deck{};
 	std::size_t round_index{ 1 };
 	card_list_t played_list = card_list_t(12,0);
+	std::size_t number_of_simulation;
 	std::vector<MCTS_player> players{};
 
 };

@@ -9,6 +9,8 @@ void base_player::play_cards()
 {
 	for (auto&& x : selected)
 		hand[x]->play(played_list);
+	if (selected.size() == 2)
+		--played_list.chopsticks;
 
 	update_card();
 }
@@ -62,7 +64,7 @@ void random_player::play()
 	selected.push_back(dist(gen));
 }
 
-MC_player::MC_player() : mcts{ std::make_unique<MCTS>() } { ; }
+MC_player::MC_player(std::size_t silumations, std::size_t determinizations) : mcts{ std::make_unique<MCTS>(silumations, determinizations) }{ ; }
 
 
 void MC_player::play()
