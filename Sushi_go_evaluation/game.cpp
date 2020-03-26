@@ -5,6 +5,8 @@
 
 const unsigned int set_count = 3;
 
+
+// Single game simulation
 std::vector<int> game::play_game()
 {
 	for (std::size_t set_index{}; set_index < set_count; ++set_index)
@@ -13,6 +15,9 @@ std::vector<int> game::play_game()
 
 		for (auto&& p : players)
 			p->start_set();
+		
+		for (size_t i = 0; i < players.size(); ++i)
+			players[i]->cheat(players, i);
 
 		while (players[0]->hand.size())
 		{
@@ -27,12 +32,12 @@ std::vector<int> game::play_game()
 		}
 
 		add_points();
+
 		for (auto&& p : players)
 			p->played_list = card_list{};
 
 		for (size_t i = 0; i < players.size(); ++i)
-			players[i]->add_points(players, i);
-		
+			players[i]->add_points(players, i);		
 	}
 
 	puddings();
@@ -41,7 +46,6 @@ std::vector<int> game::play_game()
 
 	for (auto&& p : players)
 		results.push_back(p->points());
-	
 
 	return results;
 }
@@ -87,6 +91,8 @@ void game::add_points()
 void game::maki(std::vector<std::pair<std::size_t, int>>&& maki_rolls)
 {
 	std::sort(maki_rolls.begin(), maki_rolls.end(), [](auto&& v1, auto&& v2) { return v1.second > v2.second; });
+
+	// First and second player have same amount of point
 	if (maki_rolls[1].second == maki_rolls[0].second)
 	{
 		int val = maki_rolls[0].second;
@@ -97,7 +103,11 @@ void game::maki(std::vector<std::pair<std::size_t, int>>&& maki_rolls)
 			else
 				return;
 		}
+		return;
 	}
+
+
+	// Different amount of points
 	int val = maki_rolls[1].second;
 	players[maki_rolls[0].first]->round_points[players[0]->round_points.size() - 1] += 6;
 	for (std::size_t i{ 1 }; i < maki_rolls.size(); ++i)
@@ -119,6 +129,7 @@ void game::puddings()
 	}
 
 	int min_puddings{ 20 };
+	// Don't subtract points for least points in two player game
 	if (players.size() > 2)
 	{
 		for (auto&& x : players)

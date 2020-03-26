@@ -11,25 +11,38 @@
 
 int main()
 {
-	std::vector<int> rewards{ 0,0,0 };
-	for (size_t i = 0; i < 100; i++)
+	const int number_of_games = 2000;
+
+	std::vector<double> rewards{ 0, 0, 0 };
+
+	for (size_t i = 0; i < number_of_games; ++i)
 	{
 		std::vector<player_t> players{};
-		players.emplace_back(std::make_unique<MC_player>(1000, 1));
-		players.emplace_back(std::make_unique<MC_player>(100, 1));
-		players.emplace_back(std::make_unique<MC_player>(1000, 20));
+		players.emplace_back(std::make_unique<MC_player>(1000, 1, 0.3));
+		players.emplace_back(std::make_unique<MC_player>(1000, 1, 0.4, eval_type::higher_base));
+	//	players.emplace_back(std::make_unique<Cheating_player>(100));
+	//	players.emplace_back(std::make_unique<random_player>());
+	//	players.emplace_back(std::make_unique<random_player>());
+	//	players.emplace_back(std::make_unique<rule_player>());
+
 		game game{ std::move(players) };
+
 		auto res = game.play_game();
-		rewards[0] += res[0];
-		rewards[1] += res[1];
-		rewards[2] += res[2];
-		if (!(i % 10))
-			std::cout << "Complete: " << i / 100.0 << "\n";
+
+		if (res[0] > res[1])
+			++rewards[0];
+		else if (res[1] > res[0])
+			++rewards[1];
+		else
+			++rewards[2];
+
+		if (!(i % 100))
+			std::cout << "Complete: " << i / static_cast<double>(number_of_games) << "\n";
 	}
+	std::cout << "\n";
 
 	for (auto&& x : rewards)
 		std::cout << x << "\n";
-
-
+		
 	return 0;
 }

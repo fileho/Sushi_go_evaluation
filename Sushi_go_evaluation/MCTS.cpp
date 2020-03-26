@@ -35,7 +35,7 @@ MCTS_player MCTS_player::perform_action() const
 	return MCTS_player{ new_hand, new_played, points, puddings };
 }
 
-std::size_t MCTS_player::UCT(double visit_count)
+std::size_t MCTS_player::UCT(double visit_count, double constant)
 {
 	std::size_t index{};
 	double max_value{};
@@ -44,7 +44,7 @@ std::size_t MCTS_player::UCT(double visit_count)
 		if (!actions[i].visit_count)
 			return i;
 
-		double UCT = actions[i].reward / actions[i].visit_count + UCT_const * std::sqrt(std::log(visit_count) / actions[i].visit_count);
+		double UCT = actions[i].reward / actions[i].visit_count + constant * std::sqrt(std::log(visit_count) / actions[i].visit_count);
 		if (UCT > max_value)
 		{
 			max_value = UCT;
@@ -205,7 +205,7 @@ bool MCTS_node::is_terminal() const
 	return !(players[0].generate_actions()).size();
 }
 
-std::vector<double> MCTS_node::evaluate() const
+std::vector<double> MCTS_node::evaluate(eval_type type) const
 {
 	std::vector<double> rewards(players.size(), 0);
 
@@ -234,14 +234,26 @@ std::vector<double> MCTS_node::evaluate() const
 
 	std::sort(points.begin(), points.end(), [](auto&& x, auto&& y) {return x.second > y.second; });
 
+	if (type == eval_type::win)
+	{
+		for (std::size_t i{}; i < points.size(); ++i)
+			rewards[points[i].first] = 1 - i / (points.size() - 1.0);
 
-//	for (std::size_t i{}; i < points.size(); ++i)
-//		rewards[points[i].first] = 1 - i / (points.size() - 1.0);
+		return rewards;
+	}
 
-	rewards[points[0].first] = std::min(0.5 + (std::sqrt(static_cast<double>(points[0].second) - points[1].second)) / 10, 1.0);
-	for(std::size_t i{1}; i < points.size(); ++i)
-		rewards[points[i].first] = std::max(0.5 - (std::sqrt(static_cast<double>(points[0].second) - points[i].second)) / 10, 0.0);
+	if (type == eval_type::higher_base)
+	{
+		rewards[points[0].first] = std::min(0.6 + (std::sqrt(static_cast<double>(points[0].second) - points[1].second)) / 6, 1.0);
+		for (std::size_t i{ 1 }; i < points.size(); ++i)
+			rewards[points[i].first] = std::max(0.6 - (std::sqrt(static_cast<double>(points[0].second) - points[i].second)) / 6, 0.0);
 
+		return rewards;
+	}
+
+	rewards[points[0].first] = std::min(0.5 + (std::sqrt(static_cast<double>(points[0].second) - points[1].second)) / 6, 1.0);
+	for (std::size_t i{ 1 }; i < points.size(); ++i)
+		rewards[points[i].first] = std::max(0.5 - (std::sqrt(static_cast<double>(points[0].second) - points[i].second)) / 6, 0.0);
 
 	return rewards;
 }
@@ -424,8 +436,6 @@ void MCTS::init_players(const std::vector<card_t>& player)
 	card_list_t hand(12, 0);
 	card_list_t played(15, 0);
 
-	round_index = 1;
-
 	for (auto&& x : player)
 		++hand[x->MCTS()];
 
@@ -480,7 +490,6 @@ void MCTS::determize()
 		{
 			for (std::size_t j{}; j < 13 - round_index - players.size(); ++j)
 				++pl[i].hand[deck.draw()];
-			pl[i].actions = pl[i].generate_actions();
 		}
 
 		for (auto&& p : pl)
@@ -512,7 +521,7 @@ void MCTS::update(const std::vector<player_t>& player, std::size_t index)
 
 void MCTS::add_points(const std::vector<player_t>& player, std::size_t index)
 {
-	for (size_t i = 0; i < players.size(); i++)
+	for (size_t i = 0; i < players.size(); ++i)
 	{
 		players[i].points = player[(i + index) % player.size()]->points();
 		players[i].puddings = player[(i + index) % player.size()]->puddings;
@@ -529,7 +538,7 @@ void MCTS::simulate_game(std::size_t index)
 	{
 
 		for (auto&& p : current->players)
-			p.selected_action = p.UCT(current->visit_count);
+			p.selected_action = p.UCT(current->visit_count, UCT_const);
 
 		if (current->transpositional_table[current->table_index()])
 			current = current->transpositional_table[current->table_index()].get();
@@ -551,10 +560,10 @@ void MCTS::simulate_game(std::size_t index)
 		while (!simulator.is_terminal())
 			simulator = simulator.new_node();
 
-		rewards = simulator.evaluate();
+		rewards = simulator.evaluate(type);
 	}
 	else
-		rewards = current->evaluate();
+		rewards = current->evaluate(type);
 	
 	// Back-propagation
 	while (current)
@@ -644,6 +653,9 @@ void MCTS::save_played()
 		}
 	}
 }
+
+
+
 
 void MCTS_deck::create_deck(const card_list_t& played)
 {

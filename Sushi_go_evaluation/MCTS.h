@@ -8,6 +8,7 @@
 #include <algorithm>
 
 class base_player;
+
 typedef std::unique_ptr<base_card> card_t;
 typedef std::unique_ptr<base_player> player_t;
 
@@ -16,10 +17,7 @@ typedef std::unique_ptr<base_player> player_t;
 // UCT: upper confidance bound for trees heuristic which selects nodes for expansion
 // DUCT: decoupled UCT: handes simultanious moves, each player has his own values of UCT for his actions, each player selects move individualy
 
-// tuning UCT parametr for DUCT
-const float UCT_const = 1;
-
-// std::random_device MCTS_rd;
+enum class eval_type { win, point_diff, higher_base };
 
 
 typedef std::vector<unsigned int> card_list_t;
@@ -72,7 +70,7 @@ public:
 	action_list_t generate_actions() const;
 	
 
-	std::size_t UCT(double visit_count); // finds best action according to UCT
+	std::size_t UCT(double visit_count, double constant); // finds best action according to UCT
 
 private:
 	void generate_pairs(action_list_t& action_list) const;
@@ -97,7 +95,7 @@ public:
 	table_t transpositional_table;
 
 	bool is_terminal() const;
-	std::vector<double> evaluate() const;
+	std::vector<double> evaluate(eval_type type) const;
 	std::vector<MCTS_player> swap_hands(std::vector<MCTS_player>& new_players) const;
 	std::vector<MCTS_player> tree_node() const;
 	MCTS_node new_node();
@@ -124,7 +122,12 @@ private:
 class MCTS
 {
 public:
-	MCTS(std::size_t simulation_count = 100, std::size_t deterministic_count = 20) : number_of_simulation{ simulation_count }, roots{ deterministic_count }{};
+	MCTS(std::size_t simulation_count, std::size_t deterministic_count, double UCT_const, eval_type type)
+		: number_of_simulation{ simulation_count }, roots{ deterministic_count }, UCT_const{ UCT_const }, type{ type }{};
+	// Cheating ctor
+	MCTS(std::size_t simulation_count, double UCT_const, eval_type type)
+		: number_of_simulation{ simulation_count }, roots{ 1 }, UCT_const{ UCT_const }, type{ type } { round_index = 20; }
+
 	void generete_root(const std::vector<MCTS_player>& player, std::size_t index);
 	std::pair<action_t, action_t> find_best_move();
 	void init_players(const std::vector<card_t>& player);
@@ -139,11 +142,12 @@ private:
 	card_list_t get_played() const;
 	void save_played();
 
+	double UCT_const{};
+	eval_type type;
 	std::vector<std::unique_ptr<MCTS_node>> roots;
 	MCTS_deck deck{};
 	std::size_t round_index{ 1 };
 	card_list_t played_list = card_list_t(12,0);
 	std::size_t number_of_simulation;
 	std::vector<MCTS_player> players{};
-
 };
