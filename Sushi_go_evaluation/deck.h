@@ -1,4 +1,5 @@
-#pragma once
+#ifndef DECK_H
+#define DECK_H
 
 #include "card.h"
 
@@ -13,3 +14,6 @@ public:
 private:
     std::vector<std::unique_ptr<base_card>> cards{};
 };
+
+
+#endif // !DECK_H

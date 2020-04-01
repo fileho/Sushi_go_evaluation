@@ -187,13 +187,9 @@ MCTS_node::MCTS_node(MCTS_node* parent, std::vector<MCTS_player> players)
 {
 	std::size_t size = 1;
 	for (auto&& p : players)
-	{
 		size *= p.actions.size();
-	}
 
-	
-	for (std::size_t i{}; i < size; ++i)
-		transpositional_table.push_back(nullptr);	
+	transpositional_table = std::move(table_t(size));
 }
 
 MCTS_node::MCTS_node(std::vector<MCTS_player> players) :
@@ -202,7 +198,7 @@ MCTS_node::MCTS_node(std::vector<MCTS_player> players) :
 
 bool MCTS_node::is_terminal() const
 {
-	return !(players[0].generate_actions()).size();
+	return !(players[0].actions.size());
 }
 
 std::vector<double> MCTS_node::evaluate(eval_type type) const
@@ -397,6 +393,7 @@ std::pair<action_t, action_t> MCTS::find_best_move()
 		return action;
 	}
 
+	// Simulates each determinizations in a single thread
 
 	std::vector<std::thread> threadPool{};
 
@@ -528,7 +525,7 @@ void MCTS::add_points(const std::vector<player_t>& player, std::size_t index)
 	}
 }
 
-// main function which silumates single game
+// Main function which silumates single game
 void MCTS::simulate_game(std::size_t index)
 {
 	MCTS_node* current = roots[index].get();

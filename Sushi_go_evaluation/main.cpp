@@ -7,11 +7,13 @@
 
 #include <iostream>
 #include <chrono>
+#include <fstream>
 
 
 int main()
 {
-	const int number_of_games = 2000;
+	const int number_of_games = 100;
+
 
 	std::vector<double> rewards{ 0, 0, 0 };
 
@@ -41,8 +43,14 @@ int main()
 	}
 	std::cout << "\n";
 
+	std::ofstream file{ "results.txt", std::ios::app };
+
 	for (auto&& x : rewards)
+	{
 		std::cout << x << "\n";
+		file << x << "\n";
+	}
+	file << "\n\n";
 		
 	return 0;
 }

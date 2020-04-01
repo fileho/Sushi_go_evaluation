@@ -1,4 +1,6 @@
-#pragma once
+#ifndef GAME_H
+#define GAME_H
+
 
 
 #include "player.h"
@@ -27,3 +29,5 @@ private:
 
 int evaluate(player_weight_t state);
 
+
+#endif // !GAME_H

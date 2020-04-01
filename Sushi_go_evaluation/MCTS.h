@@ -1,4 +1,5 @@
-#pragma once
+#ifndef MCTS_H
+#define MCTS_H
 
 #include "player.h"
 
@@ -57,12 +58,12 @@ class MCTS_player
 {
 public:
 	MCTS_player(card_list_t hand, card_list_t played, int points = 0, int puddings = 0) :
-		hand{ hand }, played{ played }, points{ points }, puddings{ puddings }{ actions = generate_actions(); }
+		hand{ hand }, played{ played }, points{ points }, puddings{ puddings }{ ; }
 	int points;
 	int puddings;
 	card_list_t hand;
 	card_list_t played;
-	action_list_t actions;
+	action_list_t actions{};
 	action_t selected_action{};
 
 	MCTS_player random_action();
@@ -151,3 +152,5 @@ private:
 	std::size_t number_of_simulation;
 	std::vector<MCTS_player> players{};
 };
+
+#endif // !MCTS_H

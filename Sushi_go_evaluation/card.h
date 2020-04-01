@@ -1,4 +1,6 @@
-#pragma once
+#ifndef CARD_H
+#define CARD_H
+
 
 #include <string>
 
@@ -131,3 +133,5 @@ public:
     card_type get_card() const override;
 };
 
+
+#endif // !CARD_H

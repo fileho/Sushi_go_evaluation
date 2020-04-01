@@ -1,4 +1,6 @@
-#pragma once
+#ifndef PLAYER_H
+#define PLAYER_H
+
 
 #include "card.h"
 #include "MCTS.h"
@@ -88,3 +90,5 @@ public:
 private:
 	int get_points(card_type type);
 };
+
+#endif // !PLAYER_H

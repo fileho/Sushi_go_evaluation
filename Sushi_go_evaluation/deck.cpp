@@ -1,5 +1,6 @@
 #include "deck.h"
 
+#include <algorithm>
 #include <random>
 #include <ctime>
 
