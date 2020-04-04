@@ -24,7 +24,7 @@ private:
 	void deal_cards();
 	void add_points();
 	void puddings();
-	void maki(std::vector<std::pair<std::size_t, int>>&& maki_rolls);
+	void maki(const std::vector<int>& maki_rolls);
 };
 
 int evaluate(player_weight_t state);

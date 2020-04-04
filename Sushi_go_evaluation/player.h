@@ -83,12 +83,22 @@ private:
 };
 
 
-class rule_player : public base_player
+class Rule_player : public base_player
 {
 public:
 	void play() override;
 private:
 	int get_points(card_type type);
+};
+
+
+class Genetic_player : public base_player
+{
+public:
+	Genetic_player(player_weight_t weight);
+
+private:
+	player_weight_t weights;
 };
 
 #endif // !PLAYER_H

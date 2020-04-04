@@ -7,10 +7,24 @@
 
 void base_player::play_cards()
 {
-	for (auto&& x : selected)
-		hand[x]->play(played_list);
 	if (selected.size() == 2)
+	{
 		--played_list.chopsticks;
+		// Handles corrent order of played cards 
+		// Places highest value nigiri on wasabi and plays wasabi before nigiri
+		if (hand[selected[0]]->priority() >= hand[selected[1]]->priority())
+		{
+			hand[selected[0]]->play(played_list);
+			hand[selected[1]]->play(played_list);
+		}
+		else
+		{
+			hand[selected[1]]->play(played_list);
+			hand[selected[0]]->play(played_list);
+		}
+	}
+	else
+		hand[selected[0]]->play(played_list);
 
 	update_card();
 }
@@ -184,7 +198,7 @@ void Cheating_player::cheat(const std::vector<player_t>& player, std::size_t ind
 	mcts->update(player, index);
 }
 
-void rule_player::play()
+void Rule_player::play()
 {
 	selected.clear();
 
@@ -213,7 +227,7 @@ void rule_player::play()
 	// TODO chopsticks
 }
 
-int rule_player::get_points(card_type type)
+int Rule_player::get_points(card_type type)
 {
 	switch (type)
 	{
@@ -252,3 +266,6 @@ int rule_player::get_points(card_type type)
 	}
 	return 1;
 }
+
+Genetic_player::Genetic_player(player_weight_t weight)
+	: weights{ weight } { ; }

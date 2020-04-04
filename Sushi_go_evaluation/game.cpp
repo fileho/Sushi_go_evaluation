@@ -76,47 +76,56 @@ void game::swap_hands()
 void game::add_points()
 {
 	const std::vector<int> dumlp{ 0, 1, 3, 6, 10, 15, 15, 15, 15, 15, 15 };
-	std::vector<std::pair<std::size_t, int>> maki_{};
+	std::vector<int> maki_{};
 	for (std::size_t i{}; i < players.size(); ++i)
 	{
 		const auto& y = players[i]->played_list;
 		players[i]->round_points.push_back(y.nigiri_1 + 2 * y.nigiri_2 + 3 * y.nigiri_3 + y.tempura / 2 * 5 + y.sashimi / 3 * 10 + \
 			3 * y.wasabi_nigiri_1 + 6 * y.wasabi_nigiri_2 + 9 * y.wasabi_nigiri_3 + dumlp[static_cast<std::size_t>(y.dumplings)]);
-		maki_.push_back(std::make_pair(i, y.maki_roll_1 + 2 * y.maki_roll_2 + 3 * y.maki_roll_3));
+		maki_.push_back(y.maki_roll_1 + 2 * y.maki_roll_2 + 3 * y.maki_roll_3);
 		players[i]->puddings += y.pudding;
 	}
-	maki(std::move(maki_));
+	maki(maki_);
 }
 
-void game::maki(std::vector<std::pair<std::size_t, int>>&& maki_rolls)
+void game::maki(const std::vector<int>& maki_rolls)
 {
-	std::sort(maki_rolls.begin(), maki_rolls.end(), [](auto&& v1, auto&& v2) { return v1.second > v2.second; });
+	int max{};
+	std::vector<unsigned> index{};
 
-	// First and second player have same amount of point
-	if (maki_rolls[1].second == maki_rolls[0].second)
+	// Add 6 points to all players with highest amount of maki rolls
+	for (size_t i = 0; i < maki_rolls.size(); ++i)
 	{
-		int val = maki_rolls[0].second;
-		for (std::size_t i{}; i < maki_rolls.size(); ++i)
+		if (maki_rolls[i] > max)
 		{
-			if (maki_rolls[i].second == val)
-				players[maki_rolls[i].first]->round_points[players[maki_rolls[i].first]->round_points.size() - 1] += 6;
-			else
-				return;
+			index.clear();
+			max = maki_rolls[i];
+			index.push_back(i);
 		}
-		return;
+		else if (maki_rolls[i] == max && max > 0)
+			index.push_back(i);
 	}
 
+	for (auto&& i : index)
+		players[i]->round_points[players[i]->round_points.size() -1] += 6;
 
-	// Different amount of points
-	int val = maki_rolls[1].second;
-	players[maki_rolls[0].first]->round_points[players[0]->round_points.size() - 1] += 6;
-	for (std::size_t i{ 1 }; i < maki_rolls.size(); ++i)
+	index.clear();
+
+	int second_max{};
+	// Add 3 points to all players with second highest amount of maki rolls, must have at least 1 maki
+	for (size_t i = 0; i < maki_rolls.size(); ++i)
 	{
-		if (maki_rolls[i].second == val)
-			players[maki_rolls[i].first]->round_points[players[0]->round_points.size() - 1] += 3;
-		else
-			return;
+		if (maki_rolls[i] > second_max && maki_rolls[i] < max)
+		{
+			index.clear();
+			second_max = maki_rolls[i];
+			index.push_back(i);
+		}
+		else if (maki_rolls[i] == second_max && second_max > 0)
+			index.push_back(i);
 	}
+	for (auto&& i : index)
+		players[i]->round_points[players[i]->round_points.size() - 1] += 3;
 }
 
 void game::puddings()

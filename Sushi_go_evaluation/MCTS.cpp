@@ -206,7 +206,7 @@ std::vector<double> MCTS_node::evaluate(eval_type type) const
 	std::vector<double> rewards(players.size(), 0);
 
 	std::vector<std::pair<std::size_t, int>> points{};
-	std::vector<std::pair<std::size_t, int>> makis{};
+	std::vector<int> makis{};
 	std::vector<int> puddings{};
 
 	const std::vector<int> dumplings{ 0,1,3,5,10,15,15,15,15,15,15 };
@@ -218,11 +218,10 @@ std::vector<double> MCTS_node::evaluate(eval_type type) const
 			+ 5 * (p[7]/2) + 10 * (p[8] / 3) + dumplings[p[9]] + players[i].points;
 		points.push_back(std::make_pair(i, point));
 
-		int maki = 3 * p[Maki3_i] + 2 * p[Maki2_i] + p[Maki1_i];
-		makis.push_back(std::make_pair(i,maki));
+		makis.push_back(3 * p[Maki3_i] + 2 * p[Maki2_i] + p[Maki1_i]);
 		puddings.push_back(p[10] + players[i].puddings);
 	}
-	std::vector<int> maki_rewards = maki(std::move(makis));
+	std::vector<int> maki_rewards = maki(makis);
 	std::vector<int> puddings_rewards = pudding(puddings);
 
 	for (std::size_t i{}; i < maki_rewards.size(); ++i)
@@ -230,28 +229,38 @@ std::vector<double> MCTS_node::evaluate(eval_type type) const
 
 	std::sort(points.begin(), points.end(), [](auto&& x, auto&& y) {return x.second > y.second; });
 
-	if (type == eval_type::win)
+	switch (type)
 	{
+	case eval_type::win:
 		for (std::size_t i{}; i < points.size(); ++i)
 			rewards[points[i].first] = 1 - i / (points.size() - 1.0);
 
 		return rewards;
-	}
+	case eval_type::point_diff:
+		rewards[points[0].first] = std::min(0.5 + (std::sqrt(static_cast<double>(points[0].second) - points[1].second)) / 6, 1.0);
+		for (std::size_t i{ 1 }; i < points.size(); ++i)
+			rewards[points[i].first] = std::max(0.5 - (std::sqrt(static_cast<double>(points[0].second) - points[i].second)) / 6, 0.0);
 
-	if (type == eval_type::higher_base)
-	{
+		return rewards;
+	case eval_type::higher_base:
 		rewards[points[0].first] = std::min(0.6 + (std::sqrt(static_cast<double>(points[0].second) - points[1].second)) / 6, 1.0);
 		for (std::size_t i{ 1 }; i < points.size(); ++i)
 			rewards[points[i].first] = std::max(0.6 - (std::sqrt(static_cast<double>(points[0].second) - points[i].second)) / 6, 0.0);
 
 		return rewards;
+	case eval_type::sigmoid:
+		rewards[points[0].first] = 1.0 / (1 + std::exp(-(points[0].second - points[1].second)));
+		for (std::size_t i{ 1 }; i < points.size(); ++i)
+			rewards[points[i].first] = 1.0 / (1 + std::exp(-(points[i].second - points[0].second)));
+
+		return rewards;
+	case eval_type::sigmoid2:
+		rewards[points[0].first] = 1.0 / (1 + std::exp2(-(points[0].second - points[1].second)));
+		for (std::size_t i{ 1 }; i < points.size(); ++i)
+			rewards[points[i].first] = 1.0 / (1 + std::exp2(-(points[i].second - points[0].second)));
+
+		return rewards;
 	}
-
-	rewards[points[0].first] = std::min(0.5 + (std::sqrt(static_cast<double>(points[0].second) - points[1].second)) / 6, 1.0);
-	for (std::size_t i{ 1 }; i < points.size(); ++i)
-		rewards[points[i].first] = std::max(0.5 - (std::sqrt(static_cast<double>(points[0].second) - points[i].second)) / 6, 0.0);
-
-	return rewards;
 }
 
 std::vector<MCTS_player> MCTS_node::swap_hands(std::vector<MCTS_player>& new_players) const
@@ -301,34 +310,46 @@ std::size_t MCTS_node::table_index() const
 	return index;
 }
 
-std::vector<int> MCTS_node::maki(std::vector<std::pair<std::size_t, int>>&& maki_rolls) const
+std::vector<int> MCTS_node::maki(const std::vector<int>& maki_rolls) const
 {
 	std::vector<int>rewards( maki_rolls.size(), 0);
 
-	std::sort(maki_rolls.begin(), maki_rolls.end(), [](auto&& v1, auto&& v2) { return v1.second > v2.second; });
-	if (maki_rolls[1].second == maki_rolls[0].second)
+	int max{};
+	std::vector<unsigned> index{};
+
+	// Add 6 points to all players with highest amount of maki rolls
+	for (size_t i = 0; i < maki_rolls.size(); ++i)
 	{
-		int val = maki_rolls[0].second;
-		for (std::size_t i{}; i < maki_rolls.size(); ++i)
+		if (maki_rolls[i] > max)
 		{
-			if (maki_rolls[i].second == val)
-				rewards[maki_rolls[i].first] += 6;
-			else
-				return rewards;
+			index.clear();
+			max = maki_rolls[i];
+			index.push_back(i);
 		}
+		else if (maki_rolls[i] == max && max > 0)
+			index.push_back(i);
 	}
-	else
+
+	for (auto&& i : index)
+		rewards[i] = 6;
+	
+	index.clear();
+
+	int second_max{};
+	// Add 3 points to all players with second highest amount of maki rolls, must have at least 1 maki
+	for (size_t i = 0; i < maki_rolls.size(); ++i)
 	{
-		int val = maki_rolls[1].second;
-		rewards[maki_rolls[0].first] += 6;
-		for (std::size_t i{ 1 }; i < maki_rolls.size(); ++i)
+		if (maki_rolls[i] > second_max && maki_rolls[i] < max)
 		{
-			if (maki_rolls[i].second == val)
-				rewards[maki_rolls[i].first] += 3;
-			else
-				return rewards;
+			index.clear();
+			second_max = maki_rolls[i];
+			index.push_back(i);
 		}
+		else if (maki_rolls[i] == second_max && second_max > 0)
+			index.push_back(i);
 	}
+	for (auto&& i : index)
+		rewards[i] = 3;
 
 	return rewards;
 }
@@ -344,6 +365,7 @@ std::vector<int> MCTS_node::pudding(std::vector<int>& puddings) const
 			max_puddings = x;
 	}
 
+	// Don't subtract points for Puddings in a game of two players
 	int min_puddings{ 20 };
 	if (players.size() > 2)
 	{
@@ -405,6 +427,7 @@ std::pair<action_t, action_t> MCTS::find_best_move()
 	for (size_t i = 0; i < threadPool.size(); i++)
 		threadPool[i].join();
 
+	// Finds best move for simulations
 	std::vector<double> rewards(roots[0]->players[0].actions.size(), 0);
 
 	for (auto&& r : roots)
@@ -467,6 +490,7 @@ void MCTS::new_set(const std::vector<card_t>& player)
 
 void MCTS::determize()
 {
+	// Perfect information
 	if (round_index >= players.size())
 	{
 		for (auto&& p : players)
@@ -475,6 +499,8 @@ void MCTS::determize()
 		return;
 	}
 
+	// Partial information
+	// Creates consistent deck sample
 	deck.create_deck(get_played());
 
 	for (std::size_t index{}; index < roots.size(); ++index)
@@ -500,12 +526,15 @@ void MCTS::update(const std::vector<player_t>& player, std::size_t index)
 {
 	++round_index;
 
-	for (size_t i = 0; i < players.size(); i++)
+	// Updates played cards
+	for (size_t i = 0; i < players.size(); ++i)
 	{
 		players[i].played = from_card_list(player[(i + index) % players.size()]->played_list);
 		players[i].hand = card_list_t(12, 0);
 	}
 
+
+	// Updates hands of known players
 	for (size_t i = 0; i < std::min(players.size(), round_index); ++i)
 	{
 		for (auto&& c : player[(i + index) % players.size()]->hand)

@@ -18,7 +18,7 @@ typedef std::unique_ptr<base_player> player_t;
 // UCT: upper confidance bound for trees heuristic which selects nodes for expansion
 // DUCT: decoupled UCT: handes simultanious moves, each player has his own values of UCT for his actions, each player selects move individualy
 
-enum class eval_type { win, point_diff, higher_base };
+enum class eval_type { win, point_diff, higher_base, sigmoid, sigmoid2 };
 
 
 typedef std::vector<unsigned int> card_list_t;
@@ -102,7 +102,7 @@ public:
 	MCTS_node new_node();
 	std::size_t table_index() const;
 private:
-	std::vector<int> maki(std::vector<std::pair<std::size_t, int>>&& maki_rolls) const;
+	std::vector<int> maki(const std::vector<int>& maki_rolls) const;
 	std::vector<int> pudding(std::vector<int>& puddings) const;
 };
 

@@ -35,6 +35,7 @@ public:
     virtual void play(card_list& cards) = 0;
     virtual unsigned MCTS() const = 0;
     virtual card_type get_card() const = 0;
+    virtual int priority() const { return 0; }
 };
 
 class tempura : public base_card
@@ -83,6 +84,7 @@ public:
     void play(card_list& cards) override;
     unsigned MCTS() const override;
     card_type get_card() const override;
+    int priority() const override { return 3; }
 };
 
 class sashimi : public base_card
@@ -115,6 +117,7 @@ public:
     void play(card_list& cards) override;
     unsigned MCTS() const override;
     card_type get_card() const override;
+    int priority() const override { return 1; }
 };
 
 class nigiri_3 : public base_card
@@ -123,6 +126,7 @@ public:
     void play(card_list& cards) override;
     unsigned MCTS() const override;
     card_type get_card() const override;
+    int priority() const override { return 2; }
 };
 
 class dumplings : public base_card
