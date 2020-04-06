@@ -54,7 +54,7 @@ class MC_player : public base_player
 {
 public:
 	MC_player(std::size_t silumations = 100, std::size_t determinizations = 1, double UCT_const = 1);
-	MC_player(std::size_t silumations, std::size_t determinizations, double UCT_const, eval_type type);
+	MC_player(std::size_t silumations, std::size_t determinizations, double UCT_const, eval_type type, bool different_puddings);
 	void play() override;
 	void update(const std::vector<player_t>& player, std::size_t index) override;
 	void start_set() override;
@@ -70,7 +70,7 @@ class Cheating_player : public base_player
 {
 public:
 	Cheating_player(std::size_t silumations = 100, double UCT_const = 1);
-	Cheating_player(std::size_t silumations, double UCT_const, eval_type type);
+	Cheating_player(std::size_t silumations, double UCT_const, eval_type type, bool diff_pudding);
 	void play() override;
 	void update(const std::vector<player_t>& player, std::size_t index) override;
 	void start_set() override;

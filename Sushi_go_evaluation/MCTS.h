@@ -5,8 +5,7 @@
 
 #include <vector>
 #include <memory>
-#include <random>
-#include <algorithm>
+
 
 class base_player;
 
@@ -96,14 +95,14 @@ public:
 	table_t transpositional_table;
 
 	bool is_terminal() const;
-	std::vector<double> evaluate(eval_type type) const;
+	std::vector<double> evaluate(eval_type type, int pudding_value) const;
 	std::vector<MCTS_player> swap_hands(std::vector<MCTS_player>& new_players) const;
 	std::vector<MCTS_player> tree_node() const;
 	MCTS_node new_node();
 	std::size_t table_index() const;
 private:
 	std::vector<int> maki(const std::vector<int>& maki_rolls) const;
-	std::vector<int> pudding(std::vector<int>& puddings) const;
+	std::vector<int> pudding(const std::vector<int>& puddings, int value) const;
 };
 
 typedef std::size_t MCTS_card_t;
@@ -123,10 +122,10 @@ private:
 class MCTS
 {
 public:
-	MCTS(std::size_t simulation_count, std::size_t deterministic_count, double UCT_const, eval_type type)
-		: number_of_simulation{ simulation_count }, roots{ deterministic_count }, UCT_const{ UCT_const }, type{ type }{};
+	MCTS(std::size_t simulation_count, std::size_t deterministic_count, double UCT_const, eval_type type, bool pudding_scaling)
+		: number_of_simulation{ simulation_count }, roots{ deterministic_count }, UCT_const{ UCT_const }, type{ type }{ if (pudding_scaling) pudding_value = 4; };
 	// Cheating ctor
-	MCTS(std::size_t simulation_count, double UCT_const, eval_type type)
+	MCTS(std::size_t simulation_count, double UCT_const, eval_type type, bool)
 		: number_of_simulation{ simulation_count }, roots{ 1 }, UCT_const{ UCT_const }, type{ type } { round_index = 20; }
 
 	void generete_root(const std::vector<MCTS_player>& player, std::size_t index);
@@ -136,6 +135,7 @@ public:
 	void determize();
 	void update(const std::vector<player_t>& player, std::size_t index);
 	void add_points(const std::vector<player_t>& player, std::size_t index);
+
 private:
 	void simulate_game(std::size_t index);
 	void simulate_n_games(std::size_t index);
@@ -144,13 +144,14 @@ private:
 	void save_played();
 
 	double UCT_const{};
+	int pudding_value{ 6 };
 	eval_type type;
 	std::vector<std::unique_ptr<MCTS_node>> roots;
+	std::size_t number_of_simulation;
+	std::vector<MCTS_player> players{};
 	MCTS_deck deck{};
 	std::size_t round_index{ 1 };
 	card_list_t played_list = card_list_t(12,0);
-	std::size_t number_of_simulation;
-	std::vector<MCTS_player> players{};
 };
 
 #endif // !MCTS_H

@@ -19,8 +19,8 @@ int main()
 	for (size_t i = 0; i < number_of_games; ++i)
 	{
 		std::vector<player_t> players{};
-		players.emplace_back(std::make_unique<MC_player>(1000, 1, 0.3));
-		players.emplace_back(std::make_unique<MC_player>(1000, 1, 0.4, eval_type::sigmoid));
+		players.emplace_back(std::make_unique<MC_player>(1000, 1, 0.4, eval_type::sigmoid2, true));
+		players.emplace_back(std::make_unique<MC_player>(1000, 1, 0.4, eval_type::sigmoid2, false));
 	//	players.emplace_back(std::make_unique<Cheating_player>(100));
 	//	players.emplace_back(std::make_unique<random_player>());
 	//	players.emplace_back(std::make_unique<random_player>());

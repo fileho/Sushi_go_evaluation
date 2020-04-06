@@ -82,10 +82,10 @@ void random_player::play()
 // MCTS
 
 MC_player::MC_player(std::size_t silumations, std::size_t determinizations, double UCT_const)
-	: mcts{ std::make_unique<MCTS>(silumations, determinizations, UCT_const, eval_type::point_diff) } { ; }
+	: mcts{ std::make_unique<MCTS>(silumations, determinizations, UCT_const, eval_type::point_diff, false) } { ; }
 
-MC_player::MC_player(std::size_t silumations, std::size_t determinizations, double UCT_const, eval_type type)
-	: mcts{ std::make_unique<MCTS>(silumations, determinizations, UCT_const, type) } { ; }
+MC_player::MC_player(std::size_t silumations, std::size_t determinizations, double UCT_const, eval_type type, bool diff_puddings)
+	: mcts{ std::make_unique<MCTS>(silumations, determinizations, UCT_const, type, diff_puddings) } { ; }
 
 
 void MC_player::play()
@@ -141,10 +141,10 @@ void MC_player::add_points(const std::vector<player_t>& player, std::size_t inde
 // Works the same way as normal MCTS player but updates hands of all players before first move so it has a perfect information
 
 Cheating_player::Cheating_player(std::size_t silumations, double UCT_const)
-	: mcts{ std::make_unique<MCTS>(silumations, UCT_const, eval_type::point_diff) } { ; }
+	: mcts{ std::make_unique<MCTS>(silumations, UCT_const, eval_type::point_diff, false) } {;}
 
-Cheating_player::Cheating_player(std::size_t silumations, double UCT_const, eval_type type)
-	: mcts{ std::make_unique<MCTS>(silumations, UCT_const, type) } { ; }
+Cheating_player::Cheating_player(std::size_t silumations, double UCT_const, eval_type type, bool diff_pudding)
+	: mcts{ std::make_unique<MCTS>(silumations, UCT_const, type, diff_pudding) } { ; }
 
 void Cheating_player::play()
 {
