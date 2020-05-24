@@ -11,6 +11,7 @@
 class base_player;
 class MCTS;
 enum class eval_type;
+enum class playout;
 
 typedef std::vector<int> player_weight_t;
 typedef std::unique_ptr<base_card> card_t;
@@ -53,24 +54,33 @@ public:
 class MC_player : public base_player
 {
 public:
-	MC_player(std::size_t silumations = 100, std::size_t determinizations = 1, double UCT_const = 1);
-	MC_player(std::size_t silumations, std::size_t determinizations, double UCT_const, eval_type type, bool different_puddings);
-	void play() override;
 	void update(const std::vector<player_t>& player, std::size_t index) override;
 	void start_set() override;
 	void add_points(const std::vector<player_t>& player, std::size_t index) override;
 
 	std::unique_ptr<MCTS> mcts;
-private:
+protected:
 	unsigned set_index{};
 };
 
+class DUCT_player : public MC_player
+{
+public:
+	DUCT_player(std::size_t silumations, std::size_t determinizations, double UCT_const, eval_type type, bool different_puddings, playout playout_type);
+	void play() override;
+};
+
+class EXP3_player : public MC_player
+{
+public:
+	EXP3_player(std::size_t silumations, std::size_t determinizations, double UCT_const, eval_type type, bool different_puddings, playout playout_type);
+	void play() override;
+};
 
 class Cheating_player : public base_player
 {
 public:
-	Cheating_player(std::size_t silumations = 100, double UCT_const = 1);
-	Cheating_player(std::size_t silumations, double UCT_const, eval_type type, bool diff_pudding);
+	Cheating_player(std::size_t silumations, double UCT_const, eval_type type, bool diff_pudding, playout playout_type);
 	void play() override;
 	void update(const std::vector<player_t>& player, std::size_t index) override;
 	void start_set() override;

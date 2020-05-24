@@ -6,24 +6,26 @@
 
 
 #include <iostream>
-#include <chrono>
 #include <fstream>
 
 
 int main()
 {
-
-	const int number_of_games = 100;
+	const int number_of_games = 50;
 	std::vector<double> rewards{ 0, 0, 0 };
 
 	for (size_t i = 0; i < number_of_games; ++i)
 	{
 		std::vector<player_t> players{};
-		players.emplace_back(std::make_unique<MC_player>(1000, 1, 0.4, eval_type::sigmoid2, true));
-		players.emplace_back(std::make_unique<MC_player>(1000, 1, 0.4, eval_type::sigmoid2, false));
+	//	players.emplace_back(std::make_unique<DUCT_player>(2000, 3, 0.4, eval_type::sigmoid2, true, playout::weighted));
+		players.emplace_back(std::make_unique<DUCT_player>(500, 5, 0.4, eval_type::sigmoid2, true, playout::random));
+		players.emplace_back(std::make_unique<DUCT_player>(500, 10, 0.3, eval_type::sigmoid2, true, playout::random));
 	//	players.emplace_back(std::make_unique<Cheating_player>(100));
 	//	players.emplace_back(std::make_unique<random_player>());
 	//	players.emplace_back(std::make_unique<random_player>());
+	//	players.emplace_back(std::make_unique<Rule_player>());
+	//	players.emplace_back(std::make_unique<Rule_player>());
+		players.emplace_back(std::make_unique<Rule_player>());
 	//	players.emplace_back(std::make_unique<Rule_player>());
 
 		game game{ std::move(players) };
@@ -50,6 +52,7 @@ int main()
 		file << x << "\n";
 	}
 	file << "\n\n";
-		
+	
+
 	return 0;
 }

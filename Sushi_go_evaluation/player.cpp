@@ -81,43 +81,6 @@ void random_player::play()
 
 // MCTS
 
-MC_player::MC_player(std::size_t silumations, std::size_t determinizations, double UCT_const)
-	: mcts{ std::make_unique<MCTS>(silumations, determinizations, UCT_const, eval_type::point_diff, false) } { ; }
-
-MC_player::MC_player(std::size_t silumations, std::size_t determinizations, double UCT_const, eval_type type, bool diff_puddings)
-	: mcts{ std::make_unique<MCTS>(silumations, determinizations, UCT_const, type, diff_puddings) } { ; }
-
-
-void MC_player::play()
-{
-	selected.clear();
-
-	mcts->determize();
-
-	auto res = mcts->find_best_move();
-
-	unsigned used{ 100 };
-
-	for (size_t i = 0; i < hand.size(); ++i)
-	{
-		if (hand[i]->MCTS() == res.second)
-		{
-			used = i;
-			
-			selected.push_back(i);
-			break;
-		}
-	}
-	for (size_t i = 0; i < hand.size(); ++i)
-	{
-		if (hand[i]->MCTS() == res.first && i != used)
-		{
-			selected.push_back(i);
-			break;
-		}
-	}
-}
-
 void MC_player::update(const std::vector<player_t>& player, std::size_t index)
 {
 	mcts->update(player, index);
@@ -137,14 +100,47 @@ void MC_player::add_points(const std::vector<player_t>& player, std::size_t inde
 	mcts->add_points(player, index);
 }
 
+DUCT_player::DUCT_player(std::size_t silumations, std::size_t determinizations, double UCT_const, eval_type type, bool diff_puddings, playout playout_type)
+{
+	mcts.reset(new MCTS(silumations, determinizations, UCT_const, type, diff_puddings, playout_type));
+}
+
+
+void DUCT_player::play()
+{
+	selected.clear();
+
+	mcts->determize();
+
+	auto res = mcts->find_best_move();
+
+	unsigned used{ 100 };
+
+	for (size_t i = 0; i < hand.size(); ++i)
+	{
+		if (hand[i]->MCTS() == res.second)
+		{
+			used = i;
+
+			selected.push_back(i);
+			break;
+		}
+	}
+	for (size_t i = 0; i < hand.size(); ++i)
+	{
+		if (hand[i]->MCTS() == res.first && i != used)
+		{
+			selected.push_back(i);
+			break;
+		}
+	}
+}
+
 
 // Works the same way as normal MCTS player but updates hands of all players before first move so it has a perfect information
 
-Cheating_player::Cheating_player(std::size_t silumations, double UCT_const)
-	: mcts{ std::make_unique<MCTS>(silumations, UCT_const, eval_type::point_diff, false) } {;}
-
-Cheating_player::Cheating_player(std::size_t silumations, double UCT_const, eval_type type, bool diff_pudding)
-	: mcts{ std::make_unique<MCTS>(silumations, UCT_const, type, diff_pudding) } { ; }
+Cheating_player::Cheating_player(std::size_t silumations, double UCT_const, eval_type type, bool diff_pudding, playout playout_type)
+	: mcts{ std::make_unique<MCTS>(silumations, UCT_const, type, diff_pudding, playout_type) } { ; }
 
 void Cheating_player::play()
 {
@@ -186,6 +182,8 @@ void Cheating_player::start_set()
 	++set_index;
 	if (set_index == 1)
 		mcts->init_players(hand);
+	else
+		mcts->cheat_new_set();
 }
 
 void Cheating_player::add_points(const std::vector<player_t>& player, std::size_t index)
@@ -269,3 +267,39 @@ int Rule_player::get_points(card_type type)
 
 Genetic_player::Genetic_player(player_weight_t weight)
 	: weights{ weight } { ; }
+
+
+EXP3_player::EXP3_player(std::size_t silumations, std::size_t determinizations, double UCT_const, eval_type type, bool diff_puddings, playout playout_type)
+{
+	mcts.reset(new MCTS(silumations, determinizations, UCT_const, type, diff_puddings, playout_type));
+}
+
+void EXP3_player::play()
+{
+	selected.clear();
+
+	mcts->determize();
+
+	auto res = mcts->Exp3_best_move();
+
+	unsigned used{ 100 };
+
+	for (size_t i = 0; i < hand.size(); ++i)
+	{
+		if (hand[i]->MCTS() == res.second)
+		{
+			used = i;
+
+			selected.push_back(i);
+			break;
+		}
+	}
+	for (size_t i = 0; i < hand.size(); ++i)
+	{
+		if (hand[i]->MCTS() == res.first && i != used)
+		{
+			selected.push_back(i);
+			break;
+		}
+	}
+}

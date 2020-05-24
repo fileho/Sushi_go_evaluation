@@ -6,19 +6,57 @@
 #include <thread>
 #include <utility>
 #include <algorithm>
+#include <iostream>
 
-MCTS_player MCTS_player::random_action()
+MCTS_player MCTS_player::random_action(playout type) noexcept
 {
 	actions = generate_actions();
-	std::random_device rd;
-	std::uniform_int_distribution<std::size_t> dist(0, actions.size() - 1);
-	
-	selected_action = dist(rd);	
+
+	switch (type)
+	{
+	case playout::random:
+	{
+		std::uniform_int_distribution<action_t> dist(0, static_cast<action_t>(actions.size() - 1));
+		prob = 1.0 / actions.size();
+		selected_action = dist(random_generator);
+		break;
+	}
+	case playout::weighted:
+	{
+		// Assigns possive weight to each action
+		const std::vector<unsigned> weights{ 4, 2, 1, 3, 2, 1, 4, 3, 1, 2, 4, 2, 0, 0, 0 ,1 };
+		std::vector<int> values{};
+		action_t sum{};
+		for (auto&& a : actions)
+		{
+			values.push_back(weights[a.action] + weights[a.action2] - 1);
+			sum += weights[a.action] + weights[a.action2] - 1;
+		}
+		std::uniform_int_distribution<action_t> dist(0, sum);
+		// Selects action from weighted distribution
+		auto val = dist(random_generator);
+		action_t index{};
+		sum = values[0];
+
+		while (sum < val)
+		{
+			++index;
+			sum += values[index];
+		}
+		prob = 1.0 / actions.size();
+		selected_action = index;
+
+		break;
+	}
+	default:
+		break;
+	}
+
 	
 	return perform_action();
 }
 
-MCTS_player MCTS_player::perform_action() const
+MCTS_player MCTS_player::perform_action() const noexcept
 {
 	card_list_t new_hand = hand;
 	card_list_t new_played = played;
@@ -37,11 +75,11 @@ MCTS_player MCTS_player::perform_action() const
 }
 
 // Computes UCT value for all actions, makes action selection
-std::size_t MCTS_player::UCT(double visit_count, double constant)
+action_t MCTS_player::UCT(double visit_count, double constant) noexcept
 {
-	std::size_t index{};
+	action_t index{};
 	double max_value{};
-	for (std::size_t i{}; i < actions.size(); ++i)
+	for (action_t i{}; i < actions.size(); ++i)
 	{
 		if (!actions[i].visit_count)
 			return i;
@@ -57,7 +95,62 @@ std::size_t MCTS_player::UCT(double visit_count, double constant)
 	return index;
 }
 
-void MCTS_player::generate_pairs(action_list_t& action_list) const
+action_t MCTS_player::exp3(double lambda) noexcept
+{
+	double maxReward{};
+
+	// Unexplored moves
+	for (action_t i = 0; i < actions.size(); ++i)
+	{
+		if (!actions[i].visit_count)
+		{
+			prob = lambda / actions.size();
+			return i;
+		}
+		if (actions[i].reward > maxReward)
+			maxReward = actions[i].reward;
+	}
+
+	// calculates the distuburion
+	std::vector<double> distribution{};
+
+	const double exploration { lambda / actions.size() };
+
+	double sum{};
+
+	for (auto&& a : actions)
+		sum += std::exp(exploration * (a.reward - maxReward));
+	
+	double distSum{};
+
+	for (auto&& a : actions)
+	{
+		double val = ((1 - lambda) * std::exp(exploration * (a.reward - maxReward))) / sum + exploration;
+		distribution.push_back(val);
+		distSum += val;
+	}
+
+	// Selects an action according to distribution
+	std::uniform_real_distribution<> dist(0, distSum);
+
+	double value = dist(random_generator);
+
+	sum = 0;
+
+	for (action_t i = 0; i < distribution.size(); ++i)
+	{
+		sum += distribution[i];
+		if (sum >= value)
+		{
+			prob = distribution[i];
+			return i;
+		}
+	}
+
+	return 0UL;
+}
+
+void MCTS_player::generate_pairs(action_list_t& action_list) const noexcept
 {
 	// Checks Chopsticks
 	if (!played[11])
@@ -87,21 +180,21 @@ void MCTS_player::generate_pairs(action_list_t& action_list) const
 	else if (hand[Maki1_i])
 		vec.push_back(Maki1_i);
 
-	for (std::size_t i{ 6 }; i < 11; ++i)
+	for (action_t i{ 6 }; i < 11; ++i)
 	{
 		if (hand[i])
 			vec.push_back(i);
 	}
 	// all pairs
-	for (std::size_t i{}; i < vec.size(); ++i)
+	for (action_t i{}; i < vec.size(); ++i)
 	{
-		for (std::size_t j{ i + 1 }; j < vec.size(); ++j)
+		for (action_t j{ i + 1 }; j < vec.size(); ++j)
 			action_list.push_back(MCTS_action_data{ vec[j], vec[i] });
 	}
 
 }
 // Finds two best nigiri/maki when agent has a Chopstick card
-void MCTS_player::smart_generete(action_list_t& action_list, unsigned i) const
+void MCTS_player::smart_generete(action_list_t& action_list, unsigned i) const noexcept
 {
 	if (hand[i] >= 2)
 	{
@@ -135,7 +228,7 @@ void MCTS_player::smart_generete(action_list_t& action_list, unsigned i) const
 	return;
 }
 
-void MCTS_player::perform(card_list_t& new_hand, card_list_t& new_played, action_t action) const
+void MCTS_player::perform(card_list_t& new_hand, card_list_t& new_played, action_t action) const noexcept
 {
 	--new_hand[action];
 
@@ -154,7 +247,7 @@ void MCTS_player::perform(card_list_t& new_hand, card_list_t& new_played, action
 }
 
 // Generate all "non-terrible" actions - allows only highest Nigiri, highest Maki and non duplicates
-action_list_t MCTS_player::generate_actions() const
+action_list_t MCTS_player::generate_actions() const noexcept
 {
 	action_list_t action_list{};
 	//Best Nigiri
@@ -200,12 +293,12 @@ MCTS_node::MCTS_node(std::vector<MCTS_player> players) :
 	parent{ nullptr }, transpositional_table{}, players{ players }{; }
 
 
-bool MCTS_node::is_terminal() const
+bool MCTS_node::is_terminal() const noexcept
 {
 	return !(players[0].actions.size());
 }
 
-std::vector<double> MCTS_node::evaluate(eval_type type, int pudding_value) const
+std::vector<double> MCTS_node::evaluate(eval_type type, int pudding_value) const noexcept
 {
 	std::vector<double> rewards(players.size(), 0);
 
@@ -237,10 +330,23 @@ std::vector<double> MCTS_node::evaluate(eval_type type, int pudding_value) const
 	switch (type)
 	{
 	case eval_type::win:
-		for (std::size_t i{}; i < points.size(); ++i)
-			rewards[points[i].first] = 1 - i / (points.size() - 1.0);
+	{
+		if (points[0].second > points[1].second)
+		{
+			rewards[points[0].first] = 1;
+			return rewards;
+		}
+
+		int val = points[0].second;
+		std::size_t index{};
+		while (index < points.size() && points[index].second == val)
+		{
+			rewards[points[index].first] = 0.5;
+			++index;
+		}
 
 		return rewards;
+	}
 	case eval_type::point_diff:
 		rewards[points[0].first] = std::min(0.5 + (std::sqrt(static_cast<double>(points[0].second) - points[1].second)) / 6, 1.0);
 		for (std::size_t i{ 1 }; i < points.size(); ++i)
@@ -265,12 +371,18 @@ std::vector<double> MCTS_node::evaluate(eval_type type, int pudding_value) const
 			rewards[points[i].first] = 1.0 / (1 + std::exp2(-(points[i].second - points[0].second)));
 
 		return rewards;
+	case eval_type::simgoid1x:
+		rewards[points[0].first] = 1.0 / (1 + std::pow(1.7,-(points[0].second - points[1].second)));
+		for (std::size_t i{ 1 }; i < points.size(); ++i)
+			rewards[points[i].first] = 1.0 / (1 + std::pow(1.7,-(points[i].second - points[0].second)));
+		
+		return rewards;
 	default:
 		return rewards;
 	}
 }
 
-std::vector<MCTS_player> MCTS_node::swap_hands(std::vector<MCTS_player>& new_players) const
+std::vector<MCTS_player> MCTS_node::swap_hands(std::vector<MCTS_player>& new_players) const noexcept
 {
 	auto tmp = std::move(new_players[new_players.size() - 1].hand);
 
@@ -286,7 +398,7 @@ std::vector<MCTS_player> MCTS_node::swap_hands(std::vector<MCTS_player>& new_pla
 }
 
 // Creates a node which will be added to a game tree
-std::vector<MCTS_player> MCTS_node::tree_node() const
+std::vector<MCTS_player> MCTS_node::tree_node() const noexcept
 {
 	std::vector<MCTS_player> new_players{};
 	for (auto&& p : players)
@@ -297,16 +409,16 @@ std::vector<MCTS_player> MCTS_node::tree_node() const
 
 
 // Creates random child node for rollout policy
-MCTS_node MCTS_node::new_node()
+MCTS_node MCTS_node::new_node(playout type) noexcept
 {
 	std::vector<MCTS_player> new_players{};
 	for (auto&& p : players)
-		new_players.emplace_back(p.random_action());
+		new_players.emplace_back(p.random_action(type));
 	
 	return MCTS_node{ swap_hands(new_players) };
 }
 
-std::size_t MCTS_node::table_index() const
+std::size_t MCTS_node::table_index() const noexcept
 {
 	std::size_t index{};
 	std::size_t shift{ 1 };
@@ -319,7 +431,7 @@ std::size_t MCTS_node::table_index() const
 	return index;
 }
 
-std::vector<int> MCTS_node::maki(const std::vector<int>& maki_rolls) const
+std::vector<int> MCTS_node::maki(const std::vector<int>& maki_rolls) const noexcept
 {
 	std::vector<int>rewards( maki_rolls.size(), 0);
 
@@ -327,7 +439,7 @@ std::vector<int> MCTS_node::maki(const std::vector<int>& maki_rolls) const
 	std::vector<unsigned> index{};
 
 	// Add 6 points to all players with highest amount of maki rolls
-	for (size_t i = 0; i < maki_rolls.size(); ++i)
+	for (action_t i = 0; i < maki_rolls.size(); ++i)
 	{
 		if (maki_rolls[i] > max)
 		{
@@ -346,7 +458,7 @@ std::vector<int> MCTS_node::maki(const std::vector<int>& maki_rolls) const
 
 	int second_max{};
 	// Add 3 points to all players with second highest amount of maki rolls, must have at least 1 maki
-	for (size_t i = 0; i < maki_rolls.size(); ++i)
+	for (action_t i = 0; i < maki_rolls.size(); ++i)
 	{
 		if (maki_rolls[i] > second_max && maki_rolls[i] < max)
 		{
@@ -363,7 +475,7 @@ std::vector<int> MCTS_node::maki(const std::vector<int>& maki_rolls) const
 	return rewards;
 }
 
-std::vector<int> MCTS_node::pudding(const std::vector<int>& puddings, int value) const
+std::vector<int> MCTS_node::pudding(const std::vector<int>& puddings, int value) const noexcept
 {
 	std::vector<int> ret(puddings.size(), 0);
 
@@ -397,18 +509,19 @@ std::vector<int> MCTS_node::pudding(const std::vector<int>& puddings, int value)
 }
 
 
-void MCTS::generete_root(const std::vector<MCTS_player>& player, std::size_t index)
+void MCTS::generete_root(const std::vector<MCTS_player>& player, std::size_t index) noexcept
 {
-	roots[index].reset(new MCTS_node{ nullptr, player });
+	roots[index] = MCTS_node{ nullptr, player };
+	//roots[index].reset(new MCTS_node{ nullptr, player });
 }
 
-std::pair<action_t, action_t> MCTS::find_best_move()
+std::pair<action_t, action_t> MCTS::find_best_move() noexcept
 {
 	if (round_index >= players.size())
 	{
 		// Don't search is case of only valid action
-		if (roots[0]->players[0].actions.size() == 1)
-			return std::make_pair(roots[0]->players[0].actions[0].action, roots[0]->players[0].actions[0].action2);
+		if (roots[0].players[0].actions.size() == 1)
+			return std::make_pair(roots[0].players[0].actions[0].action, roots[0].players[0].actions[0].action2);
 
 
 		simulate_n_games(0);
@@ -417,7 +530,7 @@ std::pair<action_t, action_t> MCTS::find_best_move()
 		// Returns best move
 		double best = 0;
 		std::pair<action_t, action_t> action;
-		for (auto&& a : roots[0].get()->players[0].actions)
+		for (auto&& a : roots[0].players[0].actions)
 		{
 			if (a.reward >= best)
 			{
@@ -442,17 +555,17 @@ std::pair<action_t, action_t> MCTS::find_best_move()
 		threadPool[i].join();
 
 	// Finds best move for simulations
-	std::vector<double> rewards(roots[0]->players[0].actions.size(), 0);
+	std::vector<double> rewards(roots[0].players[0].actions.size(), 0);
 
 	for (auto&& r : roots)
 	{
-		for (size_t i = 0; i < r->players[0].actions.size(); ++i)
-			rewards[i] += r->players[0].actions[i].reward;
+		for (size_t i = 0; i < r.players[0].actions.size(); ++i)
+			rewards[i] += r.players[0].actions[i].reward;
 	}
 
 	double best = 0;
 	std::pair<action_t, action_t> action;
-	auto& ac = roots[0]->players[0].actions;
+	auto& ac = roots[0].players[0].actions;
 	for (size_t i = 0; i < rewards.size(); ++i)
 	{
 		if (rewards[i] >= best)
@@ -465,7 +578,107 @@ std::pair<action_t, action_t> MCTS::find_best_move()
 	return action;
 }
 
-void MCTS::init_players(const std::vector<card_t>& player)
+std::pair<action_t, action_t> MCTS::Exp3_best_move() noexcept
+{
+	if (round_index >= players.size() || roots.size() == 1)
+	{
+		// Don't search is case of only valid action
+		if (roots[0].players[0].actions.size() == 1)
+			return std::make_pair(roots[0].players[0].actions[0].action, roots[0].players[0].actions[0].action2);
+
+		simulate_n_exp3(0);
+
+		// Selects move from distribution
+		double sum = static_cast<double>(number_of_simulation);
+
+		// Removes action caused by exploration
+		for (auto&& a : roots[0].players[0].actions)
+			a.visit_count = std::max(0.0, a.visit_count - sum * tuning_constant / roots[0].players[0].actions.size());
+
+		std::vector<double> finalDist{};
+		double finalSum{};
+
+		for (auto&& a : roots[0].players[0].actions)
+		{
+			double value = a.visit_count / sum;
+			finalDist.push_back(value);
+			finalSum += value;
+		}
+
+		std::uniform_real_distribution<> dist(0, finalSum);
+
+		double value = dist(random_generator);
+
+		sum = 0;
+
+		for (size_t i = 0; i < finalDist.size(); ++i)
+		{
+			sum += finalDist[i];
+			if (sum >= value)
+			{
+				auto& a = roots[0].players[0].actions[i];
+				return std::make_pair(a.action, a.action2);
+			}
+		}
+		return std::make_pair(0, 0);
+	}
+
+	// Simulates each determinizations in a single thread
+
+	std::vector<std::thread> threadPool{};
+
+	for (std::size_t i{}; i < roots.size(); ++i)
+	{
+		std::thread t(&MCTS::simulate_n_exp3, this, i);
+		threadPool.emplace_back(std::move(t));
+	}
+	for (size_t i = 0; i < threadPool.size(); i++)
+		threadPool[i].join();
+
+	// Finds best move for simulations
+	std::vector<double> visits(roots[0].players[0].actions.size(), 0);
+
+	for (auto&& r : roots)
+	{
+		for (size_t i = 0; i < r.players[0].actions.size(); ++i)
+			visits[i] += r.players[0].actions[i].visit_count;
+	}
+
+	double sum = static_cast<double>(number_of_simulation) * static_cast<double>(roots.size());
+
+	for (auto&& v : visits)
+		v = std::max(0.0, v - sum * tuning_constant / visits.size());
+
+	std::vector<double> finalDist{};
+	double finalSum{};
+
+	for (auto&& v : visits)
+	{
+		double value = v / sum;
+		finalDist.push_back(value);
+		finalSum += value;
+	}
+
+	std::uniform_real_distribution<> dist(0, finalSum);
+
+	double value = dist(random_generator);
+
+	sum = 0;
+
+	for (size_t i = 0; i < finalDist.size(); ++i)
+	{
+		sum += finalDist[i];
+		if (sum >= value)
+		{
+			auto& a = roots[0].players[0].actions[i];
+			return std::make_pair(a.action, a.action2);
+		}
+	}
+
+	return std::make_pair(0, 0);
+}
+
+void MCTS::init_players(const std::vector<card_t>& player) noexcept
 {
 	card_list_t hand(12, 0);
 	card_list_t played(15, 0);
@@ -481,7 +694,7 @@ void MCTS::init_players(const std::vector<card_t>& player)
 		players.emplace_back(MCTS_player{ hand, played });
 }
 
-void MCTS::new_set(const std::vector<card_t>& player)
+void MCTS::new_set(const std::vector<card_t>& player) noexcept
 {
 	card_list_t hand(12, 0);
 	card_list_t played(15, 0);
@@ -506,7 +719,7 @@ void MCTS::new_set(const std::vector<card_t>& player)
 	}
 }
 
-void MCTS::determize()
+void MCTS::determize() noexcept
 {
 	// Perfect information
 	if (round_index >= players.size())
@@ -540,7 +753,7 @@ void MCTS::determize()
 	}
 }
 
-void MCTS::update(const std::vector<player_t>& player, std::size_t index)
+void MCTS::update(const std::vector<player_t>& player, std::size_t index) noexcept
 {
 	++round_index;
 
@@ -563,7 +776,7 @@ void MCTS::update(const std::vector<player_t>& player, std::size_t index)
 		save_played();
 }
 
-void MCTS::add_points(const std::vector<player_t>& player, std::size_t index)
+void MCTS::add_points(const std::vector<player_t>& player, std::size_t index) noexcept
 {
 	for (size_t i = 0; i < players.size(); ++i)
 	{
@@ -572,17 +785,22 @@ void MCTS::add_points(const std::vector<player_t>& player, std::size_t index)
 	}
 }
 
-// Main function which silumates single game
-void MCTS::simulate_game(std::size_t index)
+void MCTS::cheat_new_set() noexcept
 {
-	MCTS_node* current = roots[index].get();
+	if (pudding_value < 6)
+		++pudding_value;
+}
 
+// Main function which silumates single game
+void MCTS::simulate_game(std::size_t index) noexcept
+{
+//	MCTS_node* current = roots[index].get();
+	MCTS_node* current = &roots[index];
 	// UCT
 	while (!current->is_terminal())
 	{
-
 		for (auto&& p : current->players)
-			p.selected_action = p.UCT(current->visit_count, UCT_const);
+			p.selected_action = p.UCT(current->visit_count, tuning_constant);
 
 		if (current->transpositional_table[current->table_index()])
 			current = current->transpositional_table[current->table_index()].get();
@@ -602,7 +820,7 @@ void MCTS::simulate_game(std::size_t index)
 		// Game simulation
 		MCTS_node simulator = MCTS_node{ current->players };
 		while (!simulator.is_terminal())
-			simulator = simulator.new_node();
+			simulator = simulator.new_node(playout_type);
 
 		rewards = simulator.evaluate(type, pudding_value);
 	}
@@ -626,13 +844,71 @@ void MCTS::simulate_game(std::size_t index)
 	}
 }
 
-void MCTS::simulate_n_games(std::size_t index)
+void MCTS::simulate_exp3(std::size_t index) noexcept
+{
+	MCTS_node* current = &roots[index];
+	// EXP3 
+	while (!current->is_terminal())
+	{
+		for (auto&& p : current->players)
+			p.selected_action = p.exp3(tuning_constant);
+
+		if (current->transpositional_table[current->table_index()])
+			current = current->transpositional_table[current->table_index()].get();
+		else
+			break;
+	}
+
+	std::vector<double> rewards{};
+
+	if (!current->is_terminal())
+	{
+		// ADD one node
+		current->transpositional_table[current->table_index()].reset(new MCTS_node{ current, current->tree_node() });
+		current = current->transpositional_table[current->table_index()].get();
+
+
+		// Game simulation
+		MCTS_node simulator = MCTS_node{ current->players };
+		while (!simulator.is_terminal())
+			simulator = simulator.new_node(playout_type);
+
+		rewards = simulator.evaluate(type, pudding_value);
+	}
+	else
+		rewards = current->evaluate(type, pudding_value);
+
+	// Back-propagation
+	while (current)
+	{
+		if (current->players[0].actions.size())
+		{
+			for (std::size_t i{}; i < current->players.size(); ++i)
+			{
+				auto& p = current->players[i];
+				// Reward is scaled according to distribution
+				p.actions[p.selected_action].reward += rewards[i] / p.prob;
+				++p.actions[p.selected_action].visit_count;
+			}
+		}
+		++current->visit_count;
+		current = current->parent;
+	}
+}
+
+void MCTS::simulate_n_games(std::size_t index) noexcept
 {
 	for (size_t i = 0; i < number_of_simulation; ++i)
 		simulate_game(index);
 }
 
-card_list_t MCTS::from_card_list(const card_list& cl)
+void MCTS::simulate_n_exp3(std::size_t index) noexcept
+{
+	for (size_t i = 0; i < number_of_simulation; ++i)
+		simulate_exp3(index);
+}
+
+card_list_t MCTS::from_card_list(const card_list& cl) noexcept
 {
 	card_list_t played(15, 0);
 	played[0] = cl.nigiri_3;
@@ -654,7 +930,7 @@ card_list_t MCTS::from_card_list(const card_list& cl)
 	return played;
 }
 
-card_list_t MCTS::get_played() const
+card_list_t MCTS::get_played() const noexcept
 {
 	auto ret = played_list;
 
@@ -683,7 +959,7 @@ card_list_t MCTS::get_played() const
 	return ret;
 }
 
-void MCTS::save_played()
+void MCTS::save_played() noexcept
 {
 	for (auto&& p : players)
 	{
@@ -702,7 +978,7 @@ void MCTS::save_played()
 
 
 
-void MCTS_deck::create_deck(const card_list_t& played)
+void MCTS_deck::create_deck(const card_list_t& played) noexcept
 {
 	deck.clear();
 
@@ -718,16 +994,15 @@ void MCTS_deck::create_deck(const card_list_t& played)
 }
 
 // Draw only moves the index so I can reshuffle the deck and reset index instead of creating a new deck
-MCTS_card_t MCTS_deck::draw()
+MCTS_card_t MCTS_deck::draw() noexcept
 {
 	++index;
 	return deck[index];
 }
 
-void MCTS_deck::shuffle()
+void MCTS_deck::shuffle() noexcept
 {
-	std::random_device rd;
-	std::mt19937 gen(rd());
+	std::mt19937 gen(random_generator());
 	std::shuffle(deck.begin(), deck.end(), gen);
 	index = 0;
 }
