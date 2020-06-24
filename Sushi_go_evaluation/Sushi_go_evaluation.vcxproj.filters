@@ -21,9 +21,6 @@
     <ClCompile Include="deck.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="simulated_annealing.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="genetic_algorithm.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -42,9 +39,6 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="deck.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="simulated_annealing.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="genetic_algorithm.h">

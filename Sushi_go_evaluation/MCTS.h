@@ -15,17 +15,18 @@ typedef std::unique_ptr<base_card> card_t;
 typedef std::unique_ptr<base_player> player_t;
 
 // Implementation of determined MCTS using deterministic DUCT heuristic and stochastic EXP3 heuristic 
-// Determined: creates multiple consistent card deals to approximate game with partial information and covgerts it into game with perfect information
+// Determined: creates multiple consistent card deals to approximate game with partial information and converts it into game with perfect information
 // UCT: upper confidance bound for trees heuristic which selects nodes for expansion
-// DUCT: decoupled UCT: handes simultanious moves, each player has his own values of UCT for his actions, each player selects move individualy
+// DUCT: decoupled UCT: handles simultanious moves, each player has his own values of UCT for his actions, each player selects move individualy
 
 // Static random engines so we don't have to create a new one every time
 static std::random_device rd{};
 static std::mt19937 random_generator(rd());
 
-enum class eval_type { win, point_diff, higher_base, sigmoid, sigmoid2, simgoid1x };
+enum class eval_type { win, point_diff, higher_base, sigmoid, sigmoid2, sigmoid1x };
 // Playout policies
 enum class playout { random, weighted };
+enum class eval_pudding { constant, scaled, scaled_plus };
 
 
 typedef std::vector<unsigned int> card_list_t;
@@ -72,7 +73,7 @@ public:
 	card_list_t played;
 	action_list_t actions{};
 	action_t selected_action{};
-	double prob{}; // Probability of selecting prarticular move by EXP3, used in backpropagation
+	double prob{}; // Probability of selecting particular move by EXP3, used in backpropagation
 
 	MCTS_player random_action(playout type) noexcept;
 	MCTS_player perform_action() const noexcept;
@@ -106,14 +107,14 @@ public:
 	table_t transpositional_table;
 
 	bool is_terminal() const noexcept;
-	std::vector<double> evaluate(eval_type type, int pudding_value) const noexcept;
+	std::vector<double> evaluate(eval_type type, double pudding_value) const noexcept;
 	std::vector<MCTS_player> swap_hands(std::vector<MCTS_player>& new_players) const noexcept;
 	std::vector<MCTS_player> tree_node() const noexcept;
 	MCTS_node new_node(playout type) noexcept;
 	std::size_t table_index() const noexcept;
 private:
 	std::vector<int> maki(const std::vector<int>& maki_rolls) const noexcept;
-	std::vector<int> pudding(const std::vector<int>& puddings, int value) const noexcept;
+	std::vector<double> pudding(const std::vector<int>& puddings, double value) const noexcept;
 };
 
 typedef std::size_t MCTS_card_t;
@@ -133,11 +134,24 @@ private:
 class MCTS
 {
 public:
-	MCTS(std::size_t simulation_count, std::size_t deterministic_count, double UCT_const, eval_type type, bool pudding_scaling, playout playout_type)
-		: number_of_simulation{ simulation_count }, roots{ deterministic_count }, tuning_constant{ UCT_const }, type{ type }, playout_type{ playout_type }{ if (pudding_scaling) pudding_value = 4; };
+	MCTS(std::size_t simulation_count, std::size_t deterministic_count, double UCT_const, eval_type type, eval_pudding pudding_scaling, playout playout_type)
+		: number_of_simulation{ simulation_count }, roots{ deterministic_count }, tuning_constant{ UCT_const }, type{ type }, playout_type{ playout_type }
+	{ 
+		if (pudding_scaling == eval_pudding::scaled)
+			pudding_value = 4;
+		else if (pudding_scaling == eval_pudding::scaled_plus)
+			pudding_value = 4.5;
+	};
 	// Cheating ctor
-	MCTS(std::size_t simulation_count, double UCT_const, eval_type type, bool pudding_scaling, playout playout_type)
-		: number_of_simulation{ simulation_count }, roots{ 1 }, tuning_constant{ UCT_const }, type{ type }, playout_type{ playout_type } { round_index = 20; if (pudding_scaling) pudding_value = 4; }
+	MCTS(std::size_t simulation_count, double UCT_const, eval_type type, eval_pudding pudding_scaling, playout playout_type)
+		: number_of_simulation{ simulation_count }, roots{ 1 }, tuning_constant{ UCT_const }, type{ type }, playout_type{ playout_type } 
+	{ 
+		round_index = 20; 
+		if (pudding_scaling == eval_pudding::scaled)
+			pudding_value = 4;
+		else if (pudding_scaling == eval_pudding::scaled_plus)
+			pudding_value = 4.5;
+	}
 
 	void generete_root(const std::vector<MCTS_player>& player, std::size_t index) noexcept;
 	std::pair<action_t, action_t> find_best_move() noexcept;
@@ -159,7 +173,7 @@ private:
 	void save_played() noexcept;
 
 	double tuning_constant{};
-	int pudding_value{ 6 };
+	double pudding_value{ 6 };
 	eval_type type;
 	playout playout_type;
 	std::vector<MCTS_node> roots;

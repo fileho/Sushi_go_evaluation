@@ -7,7 +7,7 @@ const unsigned int set_count = 3;
 
 
 // Single game simulation
-std::vector<int> game::play_game()
+std::vector<double> game::play_game()
 {
 	for (std::size_t set_index{}; set_index < set_count; ++set_index)
 	{
@@ -42,10 +42,27 @@ std::vector<int> game::play_game()
 
 	puddings();
 
-	std::vector<int> results{};
+	std::pair<int, int> max_score{};
+	std::vector<std::size_t> indicies{};
 
-	for (auto&& p : players)
-		results.push_back(p->points());
+	// handles score and in case of draw wins player with more Puddings
+	for (std::size_t i{}; i < players.size(); ++i)
+	{
+		if (players[i]->points() > max_score.first || (players[i]->points() == max_score.first && players[i]->puddings > max_score.second))
+		{
+			indicies.clear();
+			indicies.push_back(i);
+			max_score = std::make_pair(players[i]->points(), players[i]->puddings);
+		}
+		else if (players[i]->points() == max_score.first && players[i]->puddings == max_score.second)
+			indicies.push_back(i);
+	}
+
+	// One point per game
+	double points = 1.0 / indicies.size();
+	std::vector<double> results(players.size(), 0);
+	for (auto&& i : indicies)
+		results[i] = points;
 
 	return results;
 }
@@ -158,25 +175,42 @@ void game::puddings()
 			x->round_points.push_back(0);
 	}
 }
-/*
-int evaluate(player_weight_t state)
+
+
+double evaluate(player_weight_t state, player_weight_t opponent)
 {
-	int ret = 0;
+	double ret = 0;
 
-	std::vector<player> players{};
-	players.emplace_back(player{ state });
-
-	player_weight_t fill{};
-	for (int i{}; i < 4; ++i)
-		players.emplace_back(player{ fill });
-
-	for (int i{}; i < 100; ++i)
+	for (int i{}; i < 1000; ++i)
 	{
-		auto copy = players;
+		std::vector<player_t> players{};
+		players.emplace_back(std::make_unique<Genetic_player>(state));
+		players.emplace_back(std::make_unique<Genetic_player>(opponent));
+
 		game game{ std::move(players) };
 		auto results = game.play_game();
+
 		ret += results[0];
 	}
-
+	ret /= 10;
 	return ret;
-}*/
+}
+
+double evaluate(player_weight_t state)
+{
+	double ret = 0;
+
+	for (int i{}; i < 1000; ++i)
+	{
+		std::vector<player_t> players{};
+		players.emplace_back(std::make_unique<Genetic_player>(state));
+		players.emplace_back(std::make_unique<Rule_player>());
+
+		game game{ std::move(players) };
+		auto results = game.play_game();
+
+		ret += results[0];
+	}
+	ret /= 10;
+	return ret;
+}

@@ -8,13 +8,13 @@
 
 #include <vector>
 
-const int number_of_rules{ 20 };
+const int number_of_rules{ 16 };
 
 class game
 {
 public:
 	game(std::vector<std::unique_ptr<base_player>>&& player) : players{ std::move(player) } {};
-	std::vector<int> play_game();
+	std::vector<double> play_game();
 private:
 	std::vector<std::unique_ptr<base_player>> players;
 	deck deck_{};
@@ -27,7 +27,8 @@ private:
 	void maki(const std::vector<int>& maki_rolls);
 };
 
-int evaluate(player_weight_t state);
-
+// Evaluation for GA
+double evaluate(player_weight_t state, player_weight_t opponent);
+double evaluate(player_weight_t state);
 
 #endif // !GAME_H

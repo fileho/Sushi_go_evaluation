@@ -43,7 +43,8 @@ deck::deck()
         cards.emplace_back(std::make_unique<dumplings>());
 
     std::random_device rd;
-    std::mt19937 gen{ static_cast<unsigned int>(std::time(nullptr)) };
+    //std::mt19937 gen{ static_cast<unsigned int>(std::time(nullptr)) };
+    std::mt19937 gen{ rd() };
     
     std::shuffle(cards.begin(), cards.end(), gen);
 }

@@ -298,11 +298,11 @@ bool MCTS_node::is_terminal() const noexcept
 	return !(players[0].actions.size());
 }
 
-std::vector<double> MCTS_node::evaluate(eval_type type, int pudding_value) const noexcept
+std::vector<double> MCTS_node::evaluate(eval_type type, double pudding_value) const noexcept
 {
 	std::vector<double> rewards(players.size(), 0);
 
-	std::vector<std::pair<std::size_t, int>> points{};
+	std::vector<std::pair<std::size_t, double>> points{};
 	std::vector<int> makis{};
 	std::vector<int> puddings{};
 
@@ -318,8 +318,8 @@ std::vector<double> MCTS_node::evaluate(eval_type type, int pudding_value) const
 		makis.push_back(3 * p[Maki3_i] + 2 * p[Maki2_i] + p[Maki1_i]);
 		puddings.push_back(p[10] + players[i].puddings);
 	}
-	std::vector<int> maki_rewards = maki(makis);
-	std::vector<int> puddings_rewards = pudding(puddings, pudding_value);
+	auto maki_rewards = maki(makis);
+	auto puddings_rewards = pudding(puddings, pudding_value);
 
 	for (std::size_t i{}; i < maki_rewards.size(); ++i)
 		points[i].second += maki_rewards[i] + puddings_rewards[i];
@@ -337,7 +337,7 @@ std::vector<double> MCTS_node::evaluate(eval_type type, int pudding_value) const
 			return rewards;
 		}
 
-		int val = points[0].second;
+		auto val = points[0].second;
 		std::size_t index{};
 		while (index < points.size() && points[index].second == val)
 		{
@@ -371,7 +371,7 @@ std::vector<double> MCTS_node::evaluate(eval_type type, int pudding_value) const
 			rewards[points[i].first] = 1.0 / (1 + std::exp2(-(points[i].second - points[0].second)));
 
 		return rewards;
-	case eval_type::simgoid1x:
+	case eval_type::sigmoid1x:
 		rewards[points[0].first] = 1.0 / (1 + std::pow(1.7,-(points[0].second - points[1].second)));
 		for (std::size_t i{ 1 }; i < points.size(); ++i)
 			rewards[points[i].first] = 1.0 / (1 + std::pow(1.7,-(points[i].second - points[0].second)));
@@ -475,9 +475,9 @@ std::vector<int> MCTS_node::maki(const std::vector<int>& maki_rolls) const noexc
 	return rewards;
 }
 
-std::vector<int> MCTS_node::pudding(const std::vector<int>& puddings, int value) const noexcept
+std::vector<double> MCTS_node::pudding(const std::vector<int>& puddings, double value) const noexcept
 {
-	std::vector<int> ret(puddings.size(), 0);
+	std::vector<double> ret(puddings.size(), 0);
 
 	int max_puddings{ 0 };
 	for (auto&& x : puddings)

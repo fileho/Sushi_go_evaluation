@@ -12,8 +12,9 @@ class base_player;
 class MCTS;
 enum class eval_type;
 enum class playout;
+enum class eval_pudding;
 
-typedef std::vector<int> player_weight_t;
+typedef std::vector<double> player_weight_t;
 typedef std::unique_ptr<base_card> card_t;
 typedef std::unique_ptr<base_player> player_t;
 
@@ -31,6 +32,8 @@ public:
 	virtual void add_points(const std::vector<player_t>&, std::size_t) { return; };
 	// Fuction for cheating MCTS
 	virtual void cheat(const std::vector<player_t>&, std::size_t) { return; };
+	// Returns maki points
+	int maki_count() const;
 
 	std::vector<unsigned int> selected{};
 	std::vector<card_t> hand{};
@@ -66,21 +69,21 @@ protected:
 class DUCT_player : public MC_player
 {
 public:
-	DUCT_player(std::size_t silumations, std::size_t determinizations, double UCT_const, eval_type type, bool different_puddings, playout playout_type);
+	DUCT_player(std::size_t silumations, std::size_t determinizations, double UCT_const, eval_type type, eval_pudding different_puddings, playout playout_type);
 	void play() override;
 };
 
 class EXP3_player : public MC_player
 {
 public:
-	EXP3_player(std::size_t silumations, std::size_t determinizations, double UCT_const, eval_type type, bool different_puddings, playout playout_type);
+	EXP3_player(std::size_t silumations, std::size_t determinizations, double UCT_const, eval_type type, eval_pudding different_puddings, playout playout_type);
 	void play() override;
 };
 
 class Cheating_player : public base_player
 {
 public:
-	Cheating_player(std::size_t silumations, double UCT_const, eval_type type, bool diff_pudding, playout playout_type);
+	Cheating_player(std::size_t silumations, double UCT_const, eval_type type, eval_pudding diff_pudding, playout playout_type);
 	void play() override;
 	void update(const std::vector<player_t>& player, std::size_t index) override;
 	void start_set() override;
@@ -101,14 +104,26 @@ private:
 	int get_points(card_type type);
 };
 
+// Rules for genetic player
+enum class Rules{ Wasabi, Nigiri3, Nigiri2, N3Was, N2Was, N1Was, TempOdd, TempEven, TempLot, Dumpl, Sashimi, PuddMax, PuddMin, Maki3, Maki2, Maki1  };
 
 class Genetic_player : public base_player
 {
 public:
 	Genetic_player(player_weight_t weight);
-
+	void play() override;
+	void update(const std::vector<player_t>&, std::size_t) override;
 private:
+
 	player_weight_t weights;
+	int puddingMaxDiff{};
+	int puddingMinDiff{};
+	int makiDiff{};
+	bool check(Rules rule) const;
+	void use(Rules rule);
+	bool hasCard(card_type type) const;
+	int countCards(card_type type) const;
+	std::size_t getIndex(card_type type);
 };
 
 #endif // !PLAYER_H
